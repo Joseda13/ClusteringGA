@@ -5,6 +5,8 @@ import java.util.Random
 import es.us.spark.mllib.Utils
 import org.apache.spark.internal.Logging
 import org.apache.spark.ml.clustering.{BisectingKMeans, KMeans}
+import org.apache.spark.mllib.linalg.Vectors
+//import org.apache.spark.mllib.clustering.{KMeans}
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.DoubleType
@@ -59,17 +61,87 @@ object FeatureStatistics extends Logging {
     0
   }
 
-  def getFitness(features: Array[Int]): Double = {
-
+  def getChiIndices(features: Array[Int]): (Double, Double) = {
     val startTime = System.nanoTime
+
     val test = features(features.length-1)
     val spark = SparkSession.builder()
       .appName(s"Featuring Clusters $test")
       .master("local[*]")
-//      .master("local[1]")
       .getOrCreate()
 
+    val sc = spark.sparkContext
+
+    val dataFile = "B:\\DataSets_Genetics\\dataset_103.csv"
+
+    val idIndex = -1
+    val classIndex = 8
+    val delimiter = ","
+
+    val dataRead = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .option("delimiter", delimiter)
+      .csv(dataFile)
+//      .repartition(1)
+      .cache()
+
+    var data = if (idIndex != -1) {
+      dataRead.drop(s"_c$idIndex")
+        .withColumnRenamed(dataRead.columns(classIndex), "class")
+    } else {
+      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+    }
+
+    for (i <- 0 to features.length - 2){
+      if (features(i) == 0){
+        data = data.drop(s"_c$i")
+      }
+    }
+
+    val featureColumns = data.drop("class").columns
+    val featureAssembler = new VectorAssembler().setInputCols(featureColumns).setOutputCol("features")
+    val df_kmeans = featureAssembler.transform(data).select("class", "features")
+
+    val startClustering = System.nanoTime
+//    val clusteringResult = new BisectingKMeans()
+    val clusteringResult = new KMeans()
+      .setK(features(features.length-1))
+      .setSeed(1L)
+      .setMaxIter(100)
+      .setFeaturesCol("features")
+
+    val model = clusteringResult.fit(df_kmeans)
+
+    val timeClustering = (System.nanoTime - startClustering) / 1e9d
+//    logInfo("TIME TO CLUSTERING: " + timeClustering)
+
+    var predictionResult = model.transform(df_kmeans).select("class", "prediction")
+
+    predictionResult = predictionResult.withColumn("prediction", predictionResult("prediction").cast(DoubleType))
+
+    val chi = getTotalChiCross(List("class"), predictionResult, features(features.length-1), "B:\\DataSets_Genetics" + Utils.whatTimeIsIt())
+      .replace("(", "").replace(")", "").split(",")
+
+    spark.stop()
+
+    (chi(0).toDouble, chi(1).toDouble)
+  }
+
+  def getFitness(features: Array[Int]): Double = {
+
+    val startTime = System.nanoTime
+
+    val test = features(features.length-1)
+    val spark = SparkSession.builder()
+      .appName(s"Featuring Clusters $test")
+      .master("local[*]")
+      .getOrCreate()
+
+//    val dataFile = "s3://us-linkage/Datasets/dataset_101.csv"
     val dataFile = "B:\\DataSets_Genetics\\dataset_101.csv"
+//    val dataFile = "B:\\Datasets\\C11-D20-I100-Class"
+//    val dataFile = "hdfs://master/dataset/dataset_101.csv"
 
     val idIndex = -1
     val classIndex = 4
@@ -90,7 +162,7 @@ object FeatureStatistics extends Logging {
       dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
     }
 
-    logInfo("Genotype: " + features.foreach(println(_)))
+//    logInfo("Genotype: " + features.foreach(println(_)))
 
     for (i <- 0 to features.length - 2){
       if (features(i) == 0){
@@ -105,13 +177,16 @@ object FeatureStatistics extends Logging {
     val startClustering = System.nanoTime
     val clusteringResult = new BisectingKMeans()
       .setK(features(features.length-1))
-//      .setK(4)
       .setSeed(1L)
       .setMaxIter(100)
       .setFeaturesCol("features")
 
-    val model = clusteringResult.fit(df_kmeans)
+//    val clusteringResult = new KMeans().setK(features(features.length-1)).setSeed(1L).setMaxIter(100).setFeaturesCol("features")
 
+    val model = clusteringResult.fit(df_kmeans)
+//    val testComputeCost = model.computeCost(df_kmeans)
+//    println("K: " + clusteringResult.getK)
+//    println("ComputeCost: " + testComputeCost)
     val timeClustering = (System.nanoTime - startClustering) / 1e9d
     logInfo("TIME TO CLUSTERING: " + timeClustering)
 
@@ -121,16 +196,18 @@ object FeatureStatistics extends Logging {
 
     val chi = getTotalChiCross(List("class"), predictionResult, features(features.length-1), "B:\\DataSets_Genetics" + Utils.whatTimeIsIt())
       .replace("(", "").replace(")", "").split(",")
-//    val chi = getTotalChiCross(List("class"), predictionResult, 4, "B:\\DataSets_Genetics" + Utils.whatTimeIsIt())
-//      .replace("(", "").replace(")", "").split(",")
     val res = (chi(1).toDouble - chi(0).toDouble) // chi(0) - chi(1) = negativo normalmente, chi(1) - chi(0) = positivo normalmente
 
     val elapsed = (System.nanoTime - startTime) / 1e9d
     logInfo("TIME TO CALCULATE FITNESS: " + elapsed)
 
 //    spark.stop()
-
-    res
+    val divided = math.max(chi(1).toDouble,chi(0).toDouble)
+//    val divided = (features(features.length-1) - 1)*(df_kmeans.select("class").distinct().count() - 1)
+//    println("Divided: " + divided)
+    val result = Math.abs(res/divided)
+//    println("Result: " + result)
+    result
   }
 
 
@@ -272,7 +349,7 @@ object FeatureStatistics extends Logging {
     val columnsChi = getSquaredChi(dataColumn, numClusters)
 //    println("Done!")
 
-    println(s"Chi Result: $rowsChi + $columnsChi")
+//    println(s"Chi Result: $rowsChi + $columnsChi")
     (rowsChi.toDouble, columnsChi.toDouble)
   }
 

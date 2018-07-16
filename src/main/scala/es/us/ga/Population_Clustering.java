@@ -4,7 +4,6 @@ import java.util.*;
 
 public class Population_Clustering {
 
-//    private Chromosome_Clustering[] chromosomes;
     private List<Chromosome_Clustering> chromosomes;
 
     public Population_Clustering(int length){
