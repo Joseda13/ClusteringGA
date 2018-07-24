@@ -1,8 +1,10 @@
 package es.us.spark.mllib.clustering.validation
 
+import breeze.linalg.min
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 object Indices {
@@ -243,6 +245,126 @@ object Indices {
     spark.stop()
 
     (silhoutte, dunn, bouldin, wssse)
+  }
+
+  def getSilhouette(dataset: List[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+//    dataset: RDD[(Int, scala.Iterable[Vector])]
+    var b = 0.0
+    var a = 0.0
+    var sil = 0.0
+
+    var b_i_j = 0.0
+    var a_i_p = 0.0
+    var b_i = 0.0
+    var a_i = 0.0
+    var s_i = 0.0
+
+    for (k <- dataset.map(x => x._1)){
+
+      val points_K = dataset.filter(x=> x._1 == k)
+      for (i <- points_K.flatMap(_._2)){
+        b_i = 0
+        a_i = 0
+        s_i = 0
+
+        a_i_p = 0.0
+        val points_M = dataset.filter(y => y._1 != k)
+
+        for (m <- points_M.map(y => y._1)){
+          b_i_j = 0.0
+
+          for (j <- points_M.filter(M => M._1==m).flatMap(_._2)){
+            b_i_j += Vectors.sqdist(i,j)
+          }
+
+          b_i_j = b_i_j / (points_M.filter(M => M._1==m).map(_._2.size).head)
+
+          if (b_i != 0){
+            if (b_i_j < b_i){
+              b_i = b_i_j
+            }
+          } else{
+            b_i = b_i_j
+          }
+
+        }
+
+        for (p <- points_K.flatMap(_._2) if p!=i){
+          a_i_p += Vectors.sqdist(i,p)
+        }
+
+        a_i = a_i_p/(points_K.map(_._2.size).head - 1)
+
+        s_i = (b_i - a_i) / Math.max(b_i,a_i)
+
+        b += b_i
+        a += a_i
+        sil += s_i
+      }
+    }
+
+    b = b / (dataset.length * dataset.map(_._2.size).head)
+    a = a / (dataset.length * dataset.map(_._2.size).head)
+    sil = sil/dataset.map(_._2.size).sum
+
+    (b,a,sil)
+  }
+
+  def getDunn(dataset: List[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+    var intra = 0.0
+    var inter = 0.0
+    var dunn = 0.0
+
+    var suma_intra = 0.0
+    var aux_intra = 0.0
+
+    var suma_inter = 0.0
+    var aux_inter = 0.0
+
+    for (k <- dataset.map(x => x._1)){
+      suma_intra = 0.0
+
+      val points_K = dataset.filter(x=> x._1 == k)
+      for (i <- points_K.flatMap(_._2)){
+        val points_M = dataset.filter(y => y._1 != k)
+        for (m <- points_M.map(y => y._1)){
+          suma_inter = 0.0
+
+          for (j <- points_M.filter(M => M._1==m).flatMap(_._2)){
+            suma_inter += Vectors.sqdist(i,j)
+          }
+
+          aux_inter = suma_inter/(points_K.map(_._2.size).head * points_M.filter(M => M._1==m).map(_._2.size).head)
+
+          if (inter != 0){
+            if (aux_inter < inter){
+              inter = aux_inter
+            }
+          } else {
+            inter = aux_inter
+          }
+
+        }
+
+        for (p <- points_K.flatMap(_._2) if p!=i){
+          suma_intra += Vectors.sqdist(i,p)
+        }
+
+      }
+
+      aux_intra = suma_intra/(points_K.map(_._2.size).head - 1)
+      if (intra != 0){
+        if (aux_intra > intra){
+          intra = aux_intra
+        }
+      } else {
+        intra = aux_intra
+      }
+    }
+
+    dunn = inter/intra
+
+    (inter,intra,dunn)
   }
 
 }
