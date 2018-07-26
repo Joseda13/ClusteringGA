@@ -16,56 +16,29 @@ object MainTestClusterIndices {
       .master("local[*]")
       .getOrCreate()
 
-    var numVariables = 10
-    var numCluster = 2
-    var numPoints = 1200/numCluster
-
-    val arguments = List(
-      Array[String]("2","3"),
-      Array[String]("2","4"),
-      Array[String]("2","5"),
-      Array[String]("2","6"),
-      Array[String]("2","7"),
-      Array[String]("2","8"),
-      Array[String]("2","9"),
-      Array[String]("2","10"),
-      Array[String]("3","3"),
-      Array[String]("3","4"),
-      Array[String]("3","5"),
-      Array[String]("3","6"),
-      Array[String]("3","7"),
-      Array[String]("3","8"),
-      Array[String]("3","9"),
-      Array[String]("3","10"),
-      Array[String]("4","3"),
-      Array[String]("4","4"),
-      Array[String]("4","5"),
-      Array[String]("4","6"),
-      Array[String]("4","7"),
-      Array[String]("4","8"),
-      Array[String]("4","9"),
-      Array[String]("4","10"),
-      Array[String]("5","3"),
-      Array[String]("5","4"),
-      Array[String]("5","5"),
-      Array[String]("5","6"),
-      Array[String]("5","7"),
-      Array[String]("5","8"),
-      Array[String]("5","9"),
-      Array[String]("5","10"),
-      Array[String]("6","3"),
-      Array[String]("6","4"),
-      Array[String]("6","5"),
-      Array[String]("6","6"),
-      Array[String]("6","7"),
-      Array[String]("6","8"),
-      Array[String]("6","9"),
-      Array[String]("6","10")
-    )
-
+    var numVariables = 0
+    var numCluster = 0
+    var numPoints = 0
     var dataFile = ""
+
     val delimiter = ","
-    val limitNumber = 3
+
+    val minimunCluster = 2
+    val maximumCluster = 6
+    val minimunVariable = 3
+    val maximumVariable = 10
+    val limitNumber = 5
+
+    var arguments = List(Array[String]())
+
+    for (k <- minimunCluster to maximumCluster){
+      for (nv <- minimunVariable to maximumVariable){
+        val auxList = Array[String](s"$k", s"$nv")
+        arguments = auxList :: arguments
+      }
+    }
+
+    arguments = arguments.take(arguments.length - 1).reverse
 
     for (i <- 1 to limitNumber) {
 
@@ -83,90 +56,24 @@ object MainTestClusterIndices {
           .csv(dataFile)
           .cache()
 
-        val auxRDD = numVariables match {
-          case 3 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-              ))).groupByKey()
-          case 4 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-              ))).groupByKey()
-          case 5 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-                , r.getDouble(5)
-              ))).groupByKey()
-          case 6 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-                , r.getDouble(5)
-                , r.getDouble(6)
-              ))).groupByKey()
-          case 7 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-                , r.getDouble(5)
-                , r.getDouble(6)
-                , r.getDouble(7)
-              ))).groupByKey()
-          case 8 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-                , r.getDouble(5)
-                , r.getDouble(6)
-                , r.getDouble(7)
-                , r.getDouble(8)
-              ))).groupByKey()
-          case 9 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-                , r.getDouble(5)
-                , r.getDouble(6)
-                , r.getDouble(7)
-                , r.getDouble(8)
-                , r.getDouble(9)
-              ))).groupByKey()
-          case 10 =>
-            dataRead.rdd.map(r => (r.getInt(0),
-              Vectors.dense(r.getDouble(1)
-                , r.getDouble(2)
-                , r.getDouble(3)
-                , r.getDouble(4)
-                , r.getDouble(5)
-                , r.getDouble(6)
-                , r.getDouble(7)
-                , r.getDouble(8)
-                , r.getDouble(9)
-                , r.getDouble(10)
-              ))).groupByKey()
-        }
+
+        val columsDataSet = dataRead.columns.tail
+        val dataRDD = dataRead.rdd.map { r =>
+
+          val vectorValues = for (co <- columsDataSet) yield{
+            r.getDouble(co.charAt(2).toInt - 48)
+          }
+
+          val auxVector = Vectors.dense(vectorValues)
+
+          (r.getInt(0), auxVector)
+        }.groupByKey()
 
         println("*** K = " + numCluster + " ***")
         println("*** NV = " + numVariables + "***")
         println("Executing Indices")
-        val siloutes = Indices.getSilhouette(auxRDD.collect().toList)
-        val dunns = Indices.getDunn(auxRDD.collect().toList)
+        val siloutes = Indices.getSilhouette(dataRDD.collect().toList)
+        val dunns = Indices.getDunn(dataRDD.collect().toList)
         println("VALUES:")
         println("\tSilhouette (b): " + siloutes._1)
         println("\tSilhouette (a): " + siloutes._2)
@@ -181,11 +88,10 @@ object MainTestClusterIndices {
       }
 
       val stringRdd = spark.sparkContext.parallelize(result)
-      //    stringRdd.collect.foreach(println(_))
 
       stringRdd.repartition(1)
         .map(_.toString().replace("(", "").replace(")", ""))
-        .saveAsTextFile("" + s"-Results-$i-" + Utils.whatTimeIsIt())
+        .saveAsTextFile(s"-Results-$i-" + Utils.whatTimeIsIt())
     }
 
     spark.stop()
