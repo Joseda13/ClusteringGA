@@ -3,7 +3,7 @@ package es.us
 import es.us.spark.mllib.Utils
 import es.us.spark.mllib.clustering.validation.Indices
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.SparkSession
 
 object MainTestClusterIndices {
@@ -12,7 +12,7 @@ object MainTestClusterIndices {
     Logger.getLogger("akka").setLevel(Level.OFF)
 
     val spark = SparkSession.builder()
-      .appName(s"Datasets")
+      .appName(s"VariablesIndices")
       .master("local[*]")
       .getOrCreate()
 
@@ -23,16 +23,16 @@ object MainTestClusterIndices {
 
     val delimiter = ","
 
-    val minimunCluster = 2
+    val minimumCluster = 2
     val maximumCluster = 6
-    val minimunVariable = 3
+    val minimumVariable = 3
     val maximumVariable = 10
     val limitNumber = 5
 
     var arguments = List(Array[String]())
 
-    for (k <- minimunCluster to maximumCluster){
-      for (nv <- minimunVariable to maximumVariable){
+    for (k <- minimumCluster to maximumCluster){
+      for (nv <- minimumVariable to maximumVariable){
         val auxList = Array[String](s"$k", s"$nv")
         arguments = auxList :: arguments
       }
@@ -56,34 +56,47 @@ object MainTestClusterIndices {
           .csv(dataFile)
           .cache()
 
+        //Save all columns less the first
+        val columnsDataSet = dataRead.columns.tail
 
-        val columsDataSet = dataRead.columns.tail
         val dataRDD = dataRead.rdd.map { r =>
 
-          val vectorValues = for (co <- columsDataSet) yield{
-            r.getDouble(co.charAt(2).toInt - 48)
+          //Create a Array[Double] with the values of each column to the DataSet read
+          val vectorValues = for (co <- columnsDataSet) yield{
+
+            //If the column number have two digits
+            if(co.length == 4) {
+             r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+            }
+            //If the column number have one digit
+            else {
+              r.getDouble(co.charAt(2).toInt - 48)
+            }
           }
 
+          //Create a Vector with the Array[Vector] of each row in the DataSet read
           val auxVector = Vectors.dense(vectorValues)
 
+          //Return the Cluster ID and the Vector for each row in the DataSet read
           (r.getInt(0), auxVector)
         }.groupByKey()
+
 
         println("*** K = " + numCluster + " ***")
         println("*** NV = " + numVariables + "***")
         println("Executing Indices")
-        val siloutes = Indices.getSilhouette(dataRDD.collect().toList)
-        val dunns = Indices.getDunn(dataRDD.collect().toList)
+        val silhouetteValues = Indices.getSilhouette(dataRDD.collect())
+        val dunnValues = Indices.getDunnCentroids(dataRDD.collect())
         println("VALUES:")
-        println("\tSilhouette (b): " + siloutes._1)
-        println("\tSilhouette (a): " + siloutes._2)
-        println("\tSilhouette: " + siloutes._3)
-        println("\tDunn (inter): " + dunns._1)
-        println("\tDunn (intra): " + dunns._2)
-        println("\tDunn: " + dunns._3)
+        println("\tSilhouette (b average): " + silhouetteValues._1)
+        println("\tSilhouette (a average): " + silhouetteValues._2)
+        println("\tSilhouette: " + silhouetteValues._3)
+        println("\tDunn (inter): " + dunnValues._1)
+        println("\tDunn (intra): " + dunnValues._2)
+        println("\tDunn: " + dunnValues._3)
         println("\n")
 
-        (s"$numCluster-$numVariables", siloutes, dunns)
+        (s"$numCluster-$numVariables", silhouetteValues, dunnValues)
 
       }
 
@@ -98,21 +111,4 @@ object MainTestClusterIndices {
 
   }
 
-  def calculateMean(vectors: Iterable[Vector]): Vector = {
-
-    val vectorsCalculateMean = vectors.map(v => v.toArray.map(d => (d/vectors.size)))
-
-    val sumArray = new Array[Double](vectorsCalculateMean.head.size)
-    val auxSumArray = vectorsCalculateMean.map{
-      case va =>
-        var a = 0
-        while (a < va.size){
-          sumArray(a) += va.apply(a)
-          a += 1
-        }
-        sumArray
-    }.head
-
-    Vectors.dense(auxSumArray)
-  }
 }

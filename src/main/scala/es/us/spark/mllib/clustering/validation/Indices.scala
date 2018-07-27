@@ -246,11 +246,18 @@ object Indices {
     (silhoutte, dunn, bouldin, wssse)
   }
 
-  def getSilhouette(data: List[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+  /**
+    * Calculate Silhouette index.
+    *
+    * @param data Array with the Vector for each cluster.
+    * @return Return B average, A average and Silhouette value.
+    * @example getSilhouette(data)
+    */
+  def getSilhouette(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
     //Set up the global variables
     var b = 0.0
     var a = 0.0
-    var sil = 0.0
+    var silhouette = 0.0
 
     //Set up each iteration variables
     var b_i_j = 0.0
@@ -312,19 +319,26 @@ object Indices {
         //Update the global variables
         b += b_i
         a += a_i
-        sil += s_i
+        silhouette += s_i
       }
     }
 
     //Calculate the average global variables
     b = b / data.map(_._2.size).sum
     a = a / data.map(_._2.size).sum
-    sil = sil / data.map(_._2.size).sum
+    silhouette = silhouette / data.map(_._2.size).sum
 
-    (b, a, sil)
+    (b, a, silhouette)
   }
 
-  def getDunn(data: List[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+  /**
+    * Calculate Dunn index with inter-cluster and intra-cluster average distances.
+    *
+    * @param data Array with the Vector for each cluster.
+    * @return Return inter-cluster average distance, intra-cluster average distance and Dunn value.
+    * @example getDunn(data)
+    */
+  def getDunn(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
     //Set up the global variables
     var intra = 0.0
     var inter = 0.0
@@ -404,6 +418,177 @@ object Indices {
     dunn = inter / intra
 
     (inter, intra, dunn)
+  }
+
+  /**
+    * Calculate Dunn index with minimum inter-cluster distance and maximum intra-cluster distance.
+    *
+    * @param data Array with the Vector for each cluster.
+    * @return Return minimum inter-cluster distance, maximum intra-cluster distance and Dunn value.
+    * @example getDunnMinimumMaximum(data)
+    */
+  def getDunnMinimumMaximum(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+    //Set up the global variables
+    var intra = 0.0
+    var inter = 0.0
+    var dunn = 0.0
+
+    //Set up intra-cluster distance variable
+    var aux_intra = 0.0
+
+    //Set up inter-cluster distance variable
+    var aux_inter = 0.0
+
+    //For each cluster K
+    for (k <- data.map(_._1)){
+
+      val points_K = data.filter(_._1 == k)
+
+      //For i point into the cluster K
+      for (i <- points_K.flatMap(_._2)){
+
+          //For each cluster M distinct to K
+          val points_M = data.filter(_._1 != k)
+          for (m <- points_M.map(_._1)) {
+
+            //For each j point into the cluster M
+            for (j <- points_M.filter(_._1 == m).flatMap(_._2)) {
+              //Calcualte the distance between the i point and the j point
+              aux_inter = Vectors.sqdist(i, j)
+
+              //Save the minimum inter-cluster distance
+              if (inter != 0) {
+                if (aux_inter < inter) {
+                  inter = aux_inter
+                }
+              } else {
+                inter = aux_inter
+              }
+            }
+        }
+
+        //For each p point in the cluster K distinct to i
+        for (p <- points_K.flatMap(_._2) if p != i){
+          //Calculate the distance between the i point and the p point
+          aux_intra = Vectors.sqdist(i,p)
+
+          //Save the maximum intra-cluster distance
+          if (intra != 0){
+            if (aux_intra > intra){
+              intra = aux_intra
+            }
+          } else {
+            intra = aux_intra
+          }
+        }
+      }
+    }
+
+    //Calculate the dunn measure = minimum inter-cluster distance / maximum intra-cluster distance
+    dunn = inter / intra
+
+    (inter, intra, dunn)
+  }
+
+  /**
+    * Calculate Dunn index with minimum inter-cluster centroid distance and maximum intra-cluster centroid average distance.
+    *
+    * @param data Array with the Vector for each cluster.
+    * @return Return minimum inter-cluster centroid distance, maximum intra-cluster centroid average distance and Dunn value.
+    * @example getDunnCentroids(data)
+    */
+  def getDunnCentroids(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+    //Set up the global variables
+    var intra = 0.0
+    var inter = 0.0
+    var dunn = 0.0
+
+    //Set up the intra-cluster distance variables
+    var suma_intra = 0.0
+    var aux_intra = 0.0
+
+    //Set up inter-cluster distance variable
+    var aux_inter = 0.0
+
+    //Calculate the centroids of the cluster in the DataSet
+    val centroids = data.map(cluster => (cluster._1,calculateMean(cluster._2)))
+
+    //For each cluster K
+    for (k <- data.map(_._1)){
+      suma_intra = 0.0
+      val points_K = data.filter(_._1 == k)
+
+      //Save the centroid of the cluster K
+      val centroid_k = centroids.filter(_._1 == k).head._2
+
+      //Search all distinct centroids of cluster K
+      val centroids_M = centroids.filter(_._1 != k)
+
+      //For each centroid_m of cluster M
+      for (centroid_m <- centroids_M.map(_._2)){
+
+        //Calculate the distance between the centroid of the cluster K and the centroid of the cluster M
+        aux_inter = Vectors.sqdist(centroid_k,centroid_m)
+
+        //Save the minimum inter-cluster centroid distance
+        if (inter != 0) {
+          if (aux_inter < inter) {
+            inter = aux_inter
+          }
+        } else {
+          inter = aux_inter
+        }
+      }
+
+      //For i point into the cluster K
+      for (i <- points_K.flatMap(_._2)){
+
+        //Add the distance between the i point and the centroid of cluster K
+        suma_intra += Vectors.sqdist(i,centroid_k)
+      }
+
+      //Calculate the intra-cluster centroid average distance in the cluster K
+      aux_intra = suma_intra / (points_K.map(_._2.size).head)
+
+      //Save the maximum intra-cluster centroid average distance
+      if (intra != 0){
+        if (aux_intra > intra){
+          intra = aux_intra
+        }
+      } else {
+        intra = aux_intra
+      }
+    }
+
+    //Calculate the dunn measure = minimum inter-cluster centroid distance / maximum intra-cluster centroid average distance
+    dunn = inter / intra
+
+    (inter, intra, dunn)
+  }
+
+  /**
+    * Calculate Centroid to Iterable[Vector].
+    *
+    * @param vectors Array with the Vector values.
+    * @return Return the centroid of the Iterable[Vector].
+    * @example calculateMean(vectors)
+    */
+  def calculateMean(vectors: Iterable[Vector]): Vector = {
+
+    val vectorsCalculateMean = vectors.map(v => v.toArray.map(d => (d/vectors.size)))
+
+    val sumArray = new Array[Double](vectorsCalculateMean.head.size)
+    val auxSumArray = vectorsCalculateMean.map{
+      case va =>
+        var a = 0
+        while (a < va.size){
+          sumArray(a) += va.apply(a)
+          a += 1
+        }
+        sumArray
+    }.head
+
+    Vectors.dense(auxSumArray)
   }
 
 }
