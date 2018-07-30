@@ -281,7 +281,7 @@ object Indices {
 
         //For each cluster M distinct to K
         val points_M = data.filter(_._1 != k)
-        for (m <- points_M.map(y => y._1)){
+        for (m <- points_M.map(_._1)){
           b_i_j = 0.0
 
           //For each j point into the cluster M
@@ -332,10 +332,10 @@ object Indices {
   }
 
   /**
-    * Calculate Dunn index with inter-cluster and intra-cluster average distances.
+    * Calculate Dunn index with minimum inter-cluster and maximum intra-cluster average distances.
     *
     * @param data Array with the Vector for each cluster.
-    * @return Return inter-cluster average distance, intra-cluster average distance and Dunn value.
+    * @return Return minimum inter-cluster average distance, maximum intra-cluster average distance and Dunn value.
     * @example getDunn(data)
     */
   def getDunn(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
@@ -345,16 +345,16 @@ object Indices {
     var dunn = 0.0
 
     //Set up the intra-cluster distance variables
-    var suma_intra = 0.0
+    var sum_intra = 0.0
     var aux_intra = 0.0
 
     //Set up the inter-cluster distance variables
-    var suma_inter = 0.0
+    var sum_inter = 0.0
     var aux_inter = 0.0
 
     //For each cluster K
     for (k <- data.map(_._1)){
-      suma_intra = 0.0
+      sum_intra = 0.0
       val points_K = data.filter(_._1 == k)
 
       //For i point into the cluster K
@@ -366,22 +366,22 @@ object Indices {
           //For each cluster M distinct to K
           val points_M = data.filter(_._1 != k)
           for (m <- points_M.map(_._1)) {
-            suma_inter = 0.0
+            sum_inter = 0.0
 
             //For each j point into the cluster M
             for (j <- points_M.filter(_._1 == m).flatMap(_._2)) {
               //Add the distance between the i point and the j point
-              suma_inter += Vectors.sqdist(i, j)
+              sum_inter += Vectors.sqdist(i, j)
 
               //For each z point in the cluster K distinct to i
               for (z <- points_K.flatMap(_._2) if z != i) {
                 //Add the distance between the i point and the p point
-                suma_inter += Vectors.sqdist(z, j)
+                sum_inter += Vectors.sqdist(z, j)
               }
             }
 
             //Calculate the average inter-cluster distance between the cluster K and the cluster M
-            aux_inter = suma_inter / (points_K.map(_._2.size).head * points_M.filter(_._1 == m).map(_._2.size).head)
+            aux_inter = sum_inter / (points_K.map(_._2.size).head * points_M.filter(_._1 == m).map(_._2.size).head)
 
             //Save the minimum average inter-cluster distance
             if (inter != 0) {
@@ -397,12 +397,12 @@ object Indices {
         //For each p point in the cluster K distinct to i
         for (p <- points_K.flatMap(_._2) if p != i){
           //Add the distance between the i point and the p point
-          suma_intra += Vectors.sqdist(i,p)
+          sum_intra += Vectors.sqdist(i,p)
         }
       }
 
       //Calculate the average intra-cluster distance in the cluster K
-      aux_intra = suma_intra / (points_K.map(_._2.size).head * (points_K.map(_._2.size).head - 1))
+      aux_intra = sum_intra / (points_K.map(_._2.size).head * (points_K.map(_._2.size).head - 1))
 
       //Save the maximum average intra-cluster distance
       if (intra != 0){
@@ -415,6 +415,85 @@ object Indices {
     }
 
     //Calculate the dunn measure = minimum average inter-cluster distance / maximum average intra-cluster distance
+    dunn = inter / intra
+
+    (inter, intra, dunn)
+  }
+
+  /**
+    * Calculate Dunn index with average inter-cluster distance and average intra-cluster distances.
+    *
+    * @param data Array with the Vector for each cluster.
+    * @return Return inter-cluster average distance, intra-cluster average distance and Dunn value.
+    * @example getDunnWithAverage(data)
+    */
+  def getDunnWithAverage(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+    //Set up the global variables
+    var intra = 0.0
+    var inter = 0.0
+    var dunn = 0.0
+
+    //Set up the intra-cluster distance variables
+    var sum_intra = 0.0
+    var aux_intra = 0.0
+
+    //Set up the inter-cluster distance variables
+    var sum_inter = 0.0
+    var aux_inter = 0.0
+
+    //For each cluster K
+    for (k <- data.map(_._1)){
+      sum_intra = 0.0
+      val points_K = data.filter(_._1 == k)
+
+      //For i point into the cluster K
+      for (i <- points_K.flatMap(_._2)){
+
+        //Calculate the average inter-cluster distance only one time, when i point it's the first element to cluster K
+        if (i == points_K.flatMap(_._2).head) {
+
+          //For each cluster M distinct to K
+          val points_M = data.filter(_._1 != k)
+          for (m <- points_M.map(_._1)) {
+            sum_inter = 0.0
+
+            //For each j point into the cluster M
+            for (j <- points_M.filter(_._1 == m).flatMap(_._2)) {
+              //Add the distance between the i point and the j point
+              sum_inter += Vectors.sqdist(i, j)
+
+              //For each z point in the cluster K distinct to i
+              for (z <- points_K.flatMap(_._2) if z != i) {
+                //Add the distance between the i point and the p point
+                sum_inter += Vectors.sqdist(z, j)
+              }
+            }
+
+            //Calculate the average inter-cluster distance between the cluster K and the cluster M and add to aux_inter
+            aux_inter += sum_inter / (points_K.map(_._2.size).head * points_M.filter(_._1 == m).map(_._2.size).head)
+
+          }
+        }
+
+        //For each p point in the cluster K distinct to i
+        for (p <- points_K.flatMap(_._2) if p != i){
+          //Add the distance between the i point and the p point
+          sum_intra += Vectors.sqdist(i,p)
+        }
+      }
+
+      //Calculate the average intra-cluster distance in the cluster K and add to aux_intra
+      aux_intra += sum_intra / (points_K.map(_._2.size).head * (points_K.map(_._2.size).head - 1))
+
+    }
+
+    //Calculate the average inter-cluster distance
+    inter = aux_inter / (data.length * (data.length - 1))
+
+    //Calculate the average intra-cluster distance
+    intra = aux_intra / data.length
+
+    //Calculate the dunn measure = average inter-cluster distance / average intra-cluster distance
     dunn = inter / intra
 
     (inter, intra, dunn)
@@ -453,7 +532,7 @@ object Indices {
 
             //For each j point into the cluster M
             for (j <- points_M.filter(_._1 == m).flatMap(_._2)) {
-              //Calcualte the distance between the i point and the j point
+              //Calculate the distance between the i point and the j point
               aux_inter = Vectors.sqdist(i, j)
 
               //Save the minimum inter-cluster distance
@@ -504,7 +583,7 @@ object Indices {
     var dunn = 0.0
 
     //Set up the intra-cluster distance variables
-    var suma_intra = 0.0
+    var sum_intra = 0.0
     var aux_intra = 0.0
 
     //Set up inter-cluster distance variable
@@ -515,7 +594,7 @@ object Indices {
 
     //For each cluster K
     for (k <- data.map(_._1)){
-      suma_intra = 0.0
+      sum_intra = 0.0
       val points_K = data.filter(_._1 == k)
 
       //Save the centroid of the cluster K
@@ -544,11 +623,11 @@ object Indices {
       for (i <- points_K.flatMap(_._2)){
 
         //Add the distance between the i point and the centroid of cluster K
-        suma_intra += Vectors.sqdist(i,centroid_k)
+        sum_intra += Vectors.sqdist(i,centroid_k)
       }
 
       //Calculate the intra-cluster centroid average distance in the cluster K
-      aux_intra = suma_intra / (points_K.map(_._2.size).head)
+      aux_intra = sum_intra / (points_K.map(_._2.size).head)
 
       //Save the maximum intra-cluster centroid average distance
       if (intra != 0){
@@ -577,11 +656,11 @@ object Indices {
 
     val vectorsCalculateMean = vectors.map(v => v.toArray.map(d => (d/vectors.size)))
 
-    val sumArray = new Array[Double](vectorsCalculateMean.head.size)
+    val sumArray = new Array[Double](vectorsCalculateMean.head.length)
     val auxSumArray = vectorsCalculateMean.map{
       case va =>
         var a = 0
-        while (a < va.size){
+        while (a < va.length){
           sumArray(a) += va.apply(a)
           a += 1
         }

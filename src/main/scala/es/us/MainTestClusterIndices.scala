@@ -86,7 +86,7 @@ object MainTestClusterIndices {
         println("*** NV = " + numVariables + "***")
         println("Executing Indices")
         val silhouetteValues = Indices.getSilhouette(dataRDD.collect())
-        val dunnValues = Indices.getDunnCentroids(dataRDD.collect())
+        val dunnValues = Indices.getDunn(dataRDD.collect())
         println("VALUES:")
         println("\tSilhouette (b average): " + silhouetteValues._1)
         println("\tSilhouette (a average): " + silhouetteValues._2)
