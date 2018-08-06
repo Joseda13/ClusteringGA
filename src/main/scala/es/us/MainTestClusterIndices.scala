@@ -16,19 +16,23 @@ object MainTestClusterIndices {
       .master("local[*]")
       .getOrCreate()
 
+    //Set up the global variables
     var numVariables = 0
     var numCluster = 0
     var numPoints = 0
     var dataFile = ""
 
     val delimiter = ","
+    var classIndex = 0
 
-    val minimumCluster = 2
-    val maximumCluster = 6
-    val minimumVariable = 3
+    //Set up the limits of the algorithm
+    val minimumCluster = 4
+    val maximumCluster = 5
+    val minimumVariable = 1
     val maximumVariable = 10
-    val limitNumber = 5
+    val limitNumber = 1
 
+    //Create an Array with each DataSet posibility
     var arguments = List(Array[String]())
 
     for (k <- minimumCluster to maximumCluster){
@@ -45,10 +49,14 @@ object MainTestClusterIndices {
       val result = for (data <- arguments) yield {
         numCluster = data.apply(0).toInt
         numVariables = data.apply(1).toInt
-        numPoints = 1200 / numCluster
+//        numPoints = 1200 / numCluster
+        numPoints = 1500
+        classIndex = numVariables
 
-        dataFile = s"B:\\DataSets_Internos\\C$numCluster-D$numVariables-I$numPoints" + s"_$i"
+//        dataFile = s"B:\\DataSets_Internos\\C$numCluster-D$numVariables-I$numPoints" + s"_$i"
+        dataFile = s"B:\\DataSets_Genetics\\dataset_c$numVariables" + s"_$numCluster" + s"_$numPoints" + "p.csv"
 
+        //Load data
         val dataRead = spark.read
           .option("header", "false")
           .option("inferSchema", "true")
@@ -56,9 +64,10 @@ object MainTestClusterIndices {
           .csv(dataFile)
           .cache()
 
-        //Save all columns less the first
-        val columnsDataSet = dataRead.columns.tail
+        //Save all columns less the class column
+        val columnsDataSet = dataRead.drop(s"_c$classIndex").columns
 
+        //Create a RDD with each cluster and they points
         val dataRDD = dataRead.rdd.map { r =>
 
           //Create a Array[Double] with the values of each column to the DataSet read
@@ -78,9 +87,8 @@ object MainTestClusterIndices {
           val auxVector = Vectors.dense(vectorValues)
 
           //Return the Cluster ID and the Vector for each row in the DataSet read
-          (r.getInt(0), auxVector)
+          (r.getString(classIndex).hashCode, auxVector)
         }.groupByKey()
-
 
         println("*** K = " + numCluster + " ***")
         println("*** NV = " + numVariables + "***")
@@ -100,6 +108,7 @@ object MainTestClusterIndices {
 
       }
 
+      //Save the results
       val stringRdd = spark.sparkContext.parallelize(result)
 
       stringRdd.repartition(1)

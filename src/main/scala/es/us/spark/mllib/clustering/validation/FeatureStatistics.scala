@@ -61,31 +61,36 @@ object FeatureStatistics extends Logging {
     0
   }
 
-  def getChiIndices(features: Array[Int]): (Double, Double) = {
-    val startTime = System.nanoTime
-
-    val test = features(features.length-1)
+  /**
+    * Calculate the Chi Square index.
+    *
+    * @param features Chromosome with the features and K clusters to the calculation of the Chi Square index.
+    * @param pathToData String with the path to the DataSet.
+    * @return Return Chi Square index.
+    * @example getChiIndices(features, pathToData)
+    */
+  def getChiIndices(features: Array[Int], pathToData: String): (Double, Double) = {
+    val K = features(features.length-1)
     val spark = SparkSession.builder()
-      .appName(s"Featuring Clusters $test")
+      .appName(s"Featuring Clusters $K")
       .master("local[*]")
       .getOrCreate()
 
-    val sc = spark.sparkContext
-
-    val dataFile = "B:\\DataSets_Genetics\\dataset_103.csv"
-
+    //Set up the global variables
     val idIndex = -1
     val classIndex = 8
     val delimiter = ","
 
+    //Load data
     val dataRead = spark.read
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", delimiter)
-      .csv(dataFile)
+      .csv(pathToData)
 //      .repartition(1)
       .cache()
 
+    //Delete the ID column and the class column
     var data = if (idIndex != -1) {
       dataRead.drop(s"_c$idIndex")
         .withColumnRenamed(dataRead.columns(classIndex), "class")
@@ -93,6 +98,7 @@ object FeatureStatistics extends Logging {
       dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
     }
 
+    //If the gen to the chromosome if == 0, then delete its column to the DataSet
     for (i <- 0 to features.length - 2){
       if (features(i) == 0){
         data = data.drop(s"_c$i")
@@ -103,10 +109,12 @@ object FeatureStatistics extends Logging {
     val featureAssembler = new VectorAssembler().setInputCols(featureColumns).setOutputCol("features")
     val df_kmeans = featureAssembler.transform(data).select("class", "features")
 
+    //Create the clusters using the K-Means algorithm to Spark
     val startClustering = System.nanoTime
+
 //    val clusteringResult = new BisectingKMeans()
     val clusteringResult = new KMeans()
-      .setK(features(features.length-1))
+      .setK(K)
       .setSeed(1L)
       .setMaxIter(100)
       .setFeaturesCol("features")
@@ -114,7 +122,7 @@ object FeatureStatistics extends Logging {
     val model = clusteringResult.fit(df_kmeans)
 
     val timeClustering = (System.nanoTime - startClustering) / 1e9d
-//    logInfo("TIME TO CLUSTERING: " + timeClustering)
+    logInfo("TIME TO CLUSTERING: " + timeClustering)
 
     var predictionResult = model.transform(df_kmeans).select("class", "prediction")
 
@@ -128,85 +136,28 @@ object FeatureStatistics extends Logging {
     (chi(0).toDouble, chi(1).toDouble)
   }
 
-  def getFitness(features: Array[Int]): Double = {
+  /**
+    * Calculate the fitness to a chromosome.
+    *
+    * @param features Chromosome with the features and K clusters to the calculation of the Chi Square index.
+    * @param pathToData String with the path to the DataSet.
+    * @return Return the fitness to a chromosome.
+    * @example getFitness(features, pathToData)
+    */
+  def getFitness(features: Array[Int], pathToData: String): Double = {
 
     val startTime = System.nanoTime
 
-    val test = features(features.length-1)
-    val spark = SparkSession.builder()
-      .appName(s"Featuring Clusters $test")
-      .master("local[*]")
-      .getOrCreate()
-
-//    val dataFile = "s3://us-linkage/Datasets/dataset_101.csv"
-    val dataFile = "B:\\DataSets_Genetics\\dataset_101.csv"
-//    val dataFile = "B:\\Datasets\\C11-D20-I100-Class"
-//    val dataFile = "hdfs://master/dataset/dataset_101.csv"
-
-    val idIndex = -1
-    val classIndex = 4
-    val delimiter = ","
-
-    val dataRead = spark.read
-      .option("header", "false")
-      .option("inferSchema", "true")
-      .option("delimiter", delimiter)
-      .csv(dataFile)
-      .repartition(1)
-      .cache()
-
-    var data = if (idIndex != -1) {
-      dataRead.drop(s"_c$idIndex")
-        .withColumnRenamed(dataRead.columns(classIndex), "class")
-    } else {
-      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
-    }
-
-//    logInfo("Genotype: " + features.foreach(println(_)))
-
-    for (i <- 0 to features.length - 2){
-      if (features(i) == 0){
-        data = data.drop(s"_c$i")
-      }
-    }
-
-    val featureColumns = data.drop("class").columns
-    val featureAssembler = new VectorAssembler().setInputCols(featureColumns).setOutputCol("features")
-    val df_kmeans = featureAssembler.transform(data).select("class", "features")
-
-    val startClustering = System.nanoTime
-    val clusteringResult = new BisectingKMeans()
-      .setK(features(features.length-1))
-      .setSeed(1L)
-      .setMaxIter(100)
-      .setFeaturesCol("features")
-
-//    val clusteringResult = new KMeans().setK(features(features.length-1)).setSeed(1L).setMaxIter(100).setFeaturesCol("features")
-
-    val model = clusteringResult.fit(df_kmeans)
-//    val testComputeCost = model.computeCost(df_kmeans)
-//    println("K: " + clusteringResult.getK)
-//    println("ComputeCost: " + testComputeCost)
-    val timeClustering = (System.nanoTime - startClustering) / 1e9d
-    logInfo("TIME TO CLUSTERING: " + timeClustering)
-
-    var predictionResult = model.transform(df_kmeans).select("class", "prediction")
-
-    predictionResult = predictionResult.withColumn("prediction", predictionResult("prediction").cast(DoubleType))
-
-    val chi = getTotalChiCross(List("class"), predictionResult, features(features.length-1), "B:\\DataSets_Genetics" + Utils.whatTimeIsIt())
-      .replace("(", "").replace(")", "").split(",")
-    val res = (chi(1).toDouble - chi(0).toDouble) // chi(0) - chi(1) = negativo normalmente, chi(1) - chi(0) = positivo normalmente
+    val chi = getChiIndices(features, pathToData)
+    val res = (chi._1 - chi._2) // chi(0) - chi(1) = negative, chi(1) - chi(0) = positive
 
     val elapsed = (System.nanoTime - startTime) / 1e9d
     logInfo("TIME TO CALCULATE FITNESS: " + elapsed)
 
-//    spark.stop()
-    val divided = math.max(chi(1).toDouble,chi(0).toDouble)
+    val divided = math.max(chi._1,chi._2)
 //    val divided = (features(features.length-1) - 1)*(df_kmeans.select("class").distinct().count() - 1)
-//    println("Divided: " + divided)
     val result = Math.abs(res/divided)
-//    println("Result: " + result)
+
     result
   }
 

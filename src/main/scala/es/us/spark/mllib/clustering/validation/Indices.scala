@@ -1,19 +1,27 @@
 package es.us.spark.mllib.clustering.validation
 
 import breeze.linalg.min
-import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.sql.SparkSession
 
 object Indices {
 
-  def getInternalIndices(features: Array[Int]) :(Double, Double, Double, Double) = {
-    var i = 1
+  /**
+    * Calculate the Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices.
+    *
+    * @param features Chromosome with the features and K for the calculation of the Big Data indices.
+    * @param pathToData String with the path to the DataSet.
+    * @return Return Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices.
+    * @example getInternalIndices(features, pathToData)
+    */
+  def getInternalIndices(features: Array[Int], pathToData: String) :(Double, Double, Double, Double) = {
+    val i = 1
     var s = ""
-    val test = features(features.length-1)
+    val K = features(features.length-1)
+
     val spark = SparkSession.builder()
-      .appName(s"Featuring Clusters $test")
+      .appName(s"Featuring Clusters $K")
       .master("local[*]")
       .getOrCreate()
 
@@ -21,69 +29,64 @@ object Indices {
 
     val sc = spark.sparkContext
 
-    val dataFile = "B:\\DataSets_Genetics\\dataset_104.csv"
-
+    //Set up the global variables
     val idIndex = -1
     val classIndex = 10
     val delimiter = ","
 
+    //Load data
     val dataRead = spark.read
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", delimiter)
-      .csv(dataFile)
+      .csv(pathToData)
 //      .repartition(1)
       .cache()
 
-    var data = dataRead.drop("_c10")
+    //Delete ID column and class column
+    var data = if (idIndex != -1) {
+      dataRead.drop(s"_c$idIndex")
+        .drop(s"_c$classIndex")
+    } else {
+      dataRead.drop(s"_c$classIndex")
+    }
 
+    //If the gen to the chromosome if == 0, then delete its column to the DataSet
     for (i <- 0 to features.length - 2){
       if (features(i) == 0){
         data = data.drop(s"_c$i")
       }
     }
 
+    //Create a RDD with the points convert into Vectors
     val parsedData = data.map(_.toSeq.asInstanceOf[Seq[Double]]).rdd.map(s => Vectors.dense(s.toArray)).cache()
 
-    //val clusters = KMeans.train(parsedData, numClusters, numIterations, 1, "k-means||", Utils.giveMeTime())
+    //Create the clusters using the K-Means algorithm to Spark
     val clusters = new KMeans()
-      .setK(features(features.length-1))
+      .setK(K)
       .setMaxIterations(100)
       .setSeed(1L)
       .run(parsedData)
 
     //Global Center
-    val centroides = sc.parallelize(clusters.clusterCenters)
-    val centroidesCartesian = centroides.cartesian(centroides).filter(x => x._1 != x._2).cache()
-
-    var startTimeK = System.currentTimeMillis
+    val centroids = sc.parallelize(clusters.clusterCenters)
+    val centroidsCartesian = centroids.cartesian(centroids).filter(x => x._1 != x._2).cache()
 
     val intraMean = clusters.computeCost(parsedData) / parsedData.count()
-    val interMeanAux = centroidesCartesian.map(x => Vectors.sqdist(x._1, x._2)).reduce(_ + _)
-    val interMean = interMeanAux / centroidesCartesian.count()
-    /*val clusterCentroides = KMeans.train(centroides, 1, numIterations)
-    val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
-*/
+    val interMeanAux = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).reduce(_ + _)
+    val interMean = interMeanAux / centroidsCartesian.count()
+
+    //val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
+
     //Get Silhoutte index: (intercluster - intracluster)/Max(intercluster,intracluster)
     val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
     s += i + ";" + silhoutte + ";"
 
-    var stopTimeK = System.currentTimeMillis
-    val elapsedTimeSil = (stopTimeK - startTimeK)
-
-
     //DUNN
-    startTimeK = System.currentTimeMillis
 
     //Min distance between centroids
-    val minA = centroidesCartesian.map(x => Vectors.sqdist(x._1, x._2)).min()
+    val minA = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).min()
 
-    /*
-    //Min distance from centroids to global centroid
-    val minA = centroides.map { x =>
-      Vectors.sqdist(x, clusterCentroides.clusterCenters.head)
-    }.min()
-*/
     //Max distance from points to its centroid
     val maxB = parsedData.map { x =>
       Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
@@ -92,12 +95,7 @@ object Indices {
     //Get Dunn index: Mín(Dist centroides al centroide)/Max(dist punto al centroide)
     val dunn = minA / maxB
 
-    stopTimeK = System.currentTimeMillis
-    val elapsedTime = (stopTimeK - startTimeK)
-
     //DAVIES-BOULDIN
-    startTimeK = System.currentTimeMillis
-
     val avgCentroid = parsedData.map { x =>
       //Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
       (clusters.predict(x), x)
@@ -109,7 +107,7 @@ object Indices {
 
     val bcAvgCentroid = sc.broadcast(avgCentroid)
 
-    val centroidesWithId = centroides.zipWithIndex()
+    val centroidesWithId = centroids.zipWithIndex()
       .map(_.swap).cache()
 
     val cartesianCentroides = centroidesWithId.cartesian(centroidesWithId).filter(x => x._1._1 != x._2._1)
@@ -121,27 +119,29 @@ object Indices {
 
     val bouldin = davis / features(features.length-1)
 
-    stopTimeK = System.currentTimeMillis
-    val elapsedTimeDavies = (stopTimeK - startTimeK)
-
     //WSSSE
-    startTimeK = System.currentTimeMillis
     val wssse = clusters.computeCost(parsedData)
-
-    stopTimeK = System.currentTimeMillis
-    val elapsedTimeW = (stopTimeK - startTimeK)
 
     spark.stop()
 
     (silhoutte, dunn, bouldin, wssse)
   }
 
-  def getInternalIndicesNewVersion(features: Array[Int]) :(Double, Double, Double, Double) = {
-    var i = 1
+  /**
+    * Calculate the Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices new version.
+    *
+    * @param features Chromosome with the features and K for the calculation of the Big Data indices.
+    * @param pathToData String with the path to the DataSet.
+    * @return Return Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices new version.
+    * @example getInternalIndicesNewVersion(features, pathToData)
+    */
+  def getInternalIndicesNewVersion(features: Array[Int], pathToData: String) :(Double, Double, Double, Double) = {
+    val i = 1
     var s = ""
-    val test = features(features.length-1)
+    val K = features(features.length-1)
+
     val spark = SparkSession.builder()
-      .appName(s"Featuring Clusters $test")
+      .appName(s"Featuring Clusters $K")
       .master("local[*]")
       .getOrCreate()
 
@@ -149,31 +149,39 @@ object Indices {
 
     val sc = spark.sparkContext
 
-    val dataFile = "B:\\DataSets_Genetics\\dataset_104.csv"
-
+    //Set up the global variables
     val idIndex = -1
     val classIndex = 10
     val delimiter = ","
 
+    //Load data
     val dataRead = spark.read
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", delimiter)
-      .csv(dataFile)
+      .csv(pathToData)
       //      .repartition(1)
       .cache()
 
-    var data = dataRead.drop("_c10")
+    //Delete ID column and class column
+    var data = if (idIndex != -1) {
+      dataRead.drop(s"_c$idIndex")
+        .drop(s"_c$classIndex")
+    } else {
+      dataRead.drop(s"_c$classIndex")
+    }
 
+    //If the gen to the chromosome if == 0, then delete its column to the DataSet
     for (i <- 0 to features.length - 2){
       if (features(i) == 0){
         data = data.drop(s"_c$i")
       }
     }
 
+    //Create a RDD with the points convert into Vectors
     val parsedData = data.map(_.toSeq.asInstanceOf[Seq[Double]]).rdd.map(s => Vectors.dense(s.toArray)).cache()
 
-    //val clusters = KMeans.train(parsedData, numClusters, numIterations, 1, "k-means||", Utils.giveMeTime())
+    //Create the clusters using the K-Means algorithm to Spark
 //    val clusters = new BisectingKMeans()
     val clusters = new KMeans()
       .setK(features(features.length-1))
@@ -188,23 +196,16 @@ object Indices {
     val intraMean = (((6*clusters.computeCost(parsedData))-1) /(parsedData.first().size-1)) / parsedData.count()
     val interMeanAux = centroidesCartesian.map(x => (((6*Vectors.sqdist(x._1, x._2))-1) / (x._1.size-1)) ).reduce(_ + _)
     val interMean = interMeanAux / centroidesCartesian.count()
-    /*val clusterCentroides = KMeans.train(centroides, 1, numIterations)
-    val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
-*/
+
     //Get Silhoutte index: (intercluster - intracluster)/Max(intercluster,intracluster)
     val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
     s += i + ";" + silhoutte + ";"
 
     //DUNN
+
     //Min distance between centroids
     val minA = centroidesCartesian.map(x => (((6*Vectors.sqdist(x._1, x._2))-1) / (x._1.size - 1)) ).min()
 
-    /*
-    //Min distance from centroids to global centroid
-    val minA = centroides.map { x =>
-      Vectors.sqdist(x, clusterCentroides.clusterCenters.head)
-    }.min()
-*/
     //Max distance from points to its centroid
     val maxB = parsedData.map { x =>
       ((((6*Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))) - 1)) / (x.size - 1))

@@ -17,6 +17,7 @@ public class GeneticAlgorithm_Example {
     public static final int TOURNAMENT_SIZE = 2;
     private static final int DIMENSION = 6;
     private static final int K_MAX = 10;
+    public static String PATHTODATA= "B:\\DataSets_Genetics\\dataset_104.csv";
 
     public Population_Clustering evolve (Population_Clustering polutaion){
         return mutationPopulation(crossoverPopulation(polutaion));

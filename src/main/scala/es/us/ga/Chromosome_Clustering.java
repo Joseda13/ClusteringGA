@@ -205,7 +205,7 @@ public class Chromosome_Clustering {
     }
 
     public double recalculatedFitness(){
-        return FeatureStatistics.getFitness(getGenes());
+        return FeatureStatistics.getFitness(getGenes(), GeneticAlgorithm_Example.PATHTODATA);
     }
 
     public String toString(){

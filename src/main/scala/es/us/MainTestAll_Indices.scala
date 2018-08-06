@@ -16,15 +16,17 @@ object MainTestAll_Indices {
 
     val startTime = System.nanoTime
 
+    val dataFile = "B:\\DataSets_Genetics\\dataset_104.csv"
+
     val geneticAlgorithm = new GeneticAlgorithm_Example
 
     var population = geneticAlgorithm.randomPopulation()
     population.getChromosomes.toArray().foreach(println(_))
 
     for (i <- 0 until population.getChromosomes.size()){
-//      var indicesChi = FeatureStatistics.getChiIndices(population.getChromosomes.get(i).getGenes)
-      var indicesOld = Indices.getInternalIndices(population.getChromosomes.get(i).getGenes)
-      var indicesInternal = Indices.getInternalIndicesNewVersion(population.getChromosomes.get(i).getGenes)
+//      var indicesChi = FeatureStatistics.getChiIndices(population.getChromosomes.get(i).getGenes, dataFile)
+      var indicesOld = Indices.getInternalIndices(population.getChromosomes.get(i).getGenes, dataFile)
+      var indicesInternal = Indices.getInternalIndicesNewVersion(population.getChromosomes.get(i).getGenes, dataFile)
 
       println("Chromosome: " + population.getChromosomes.get(i).toSpecialString + "=>"
 //        + " -> Indices => Chi Row: " + indicesChi._1 + ", Chi Column: " + indicesChi._2
