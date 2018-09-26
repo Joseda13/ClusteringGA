@@ -7,18 +7,18 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GeneticAlgorithm_Example {
 
     // parameters for the GA
-    public static final int POPULATION_SIZE = 97;
-    public static final int NUM_GENERATIONS = 5;
-    public static final double MUTATION_RATE = 0.08;
+    public static final int POPULATION_SIZE = 100;
+    public static final int NUM_GENERATIONS = 100;
+    public static final double MUTATION_RATE = 0.1;
     public static final double MUTATION_WEIGHTS = 0.7;
     public static final double MUTATION_K = 0.3;
     public static final double CROSSOVER_RATE = 0.95;
     public static final int NUM_ELIT_CHROMOSOMES = 2;
     public static final int TOURNAMENT_SIZE = 2;
-    private static final int DIMENSION = 6;
-    private static final int K_MAX = 10;
-    public static String PATHTODATA= "B:\\DataSets_Genetics\\dataset_104.csv";
-
+    private static final int DIMENSION = 10;
+    private static final int K_MAX = 11;
+//    public static String PATHTODATA = "B:\\DataSets_Genetics\\K4-14D-4G-5000p-Version_0_1_2.csv";
+    public static String PATHTODATA = "B:\\K7-10D-5V-5DU.csv";
     public Population_Clustering evolve (Population_Clustering polutaion){
         return mutationPopulation(crossoverPopulation(polutaion));
     }
@@ -48,7 +48,12 @@ public class GeneticAlgorithm_Example {
 
         for (int x=NUM_ELIT_CHROMOSOMES; x < population.getChromosomes().size(); x++){
             if (Math.random() < MUTATION_RATE){
+                //Mutar el gen entero
                 mutatePopulation.getChromosomes().add(x, mutateChromosome(population.getChromosomes().get(x)));
+                //Mutar solo una variable
+//                mutatePopulation.getChromosomes().add(x, mutateChromosomeOnlyOneGen(population.getChromosomes().get(x)));
+                //Mutar solo una variable y K
+//                mutatePopulation.getChromosomes().add(x, mutateChromosomeOnlyOneGenWithK(population.getChromosomes().get(x)));
             }else {
                 mutatePopulation.getChromosomes().add(x, population.getChromosomes().get(x));
             }
@@ -85,7 +90,7 @@ public class GeneticAlgorithm_Example {
                 }else {
                     mutateChromosome.getGenes()[i] = chromosome.getGenes()[i];
                 }
-            }else {
+            }else if (i==chromosome.getGenes().length-1){
                 if (Math.random() < MUTATION_K){
                     if (Math.random() < 0.5){
                         mutateChromosome.getGenes()[i] = chromosome.getGenes()[i] + 1;
@@ -95,6 +100,44 @@ public class GeneticAlgorithm_Example {
                 }else{
                     mutateChromosome.getGenes()[i] = chromosome.getGenes()[i];
                 }
+            }
+        }
+
+        return  mutateChromosome.validateChromosome();
+    }
+
+    private Chromosome_Clustering mutateChromosomeOnlyOneGen (Chromosome_Clustering chromosome){
+        Chromosome_Clustering mutateChromosome = chromosome;
+
+        if (Math.random() < MUTATION_WEIGHTS){
+            int index = ThreadLocalRandom.current().nextInt(0, chromosome.getGenes().length-1);
+            if (chromosome.getGenes()[index] == 0){
+                mutateChromosome.getGenes()[index] = 1;
+            }else if(chromosome.getGenes()[index] == 1){
+                mutateChromosome.getGenes()[index] = 0;
+            }
+        }
+
+        return  mutateChromosome.validateChromosome();
+    }
+
+    private Chromosome_Clustering mutateChromosomeOnlyOneGenWithK (Chromosome_Clustering chromosome){
+        Chromosome_Clustering mutateChromosome = chromosome;
+        int indexK = chromosome.getGenes().length-1;
+        if (Math.random() < MUTATION_WEIGHTS){
+            int index = ThreadLocalRandom.current().nextInt(0, indexK);
+            if (chromosome.getGenes()[index] == 0){
+                mutateChromosome.getGenes()[index] = 1;
+            }else if(chromosome.getGenes()[index] == 1){
+                mutateChromosome.getGenes()[index] = 0;
+            }
+        }
+
+        if (Math.random() < MUTATION_K) {
+            if (Math.random() < 0.5) {
+                mutateChromosome.getGenes()[indexK] = chromosome.getGenes()[indexK] + 1;
+            } else if (chromosome.getGenes()[indexK] > 2) {
+                mutateChromosome.getGenes()[indexK] = chromosome.getGenes()[indexK] - 1;
             }
         }
 
@@ -116,23 +159,21 @@ public class GeneticAlgorithm_Example {
     public Population_Clustering randomPopulation() {
         List<Chromosome_Clustering> popList = new LinkedList<>();
 
-//        for(int x=0; x < GeneticAlgorithm_Example.POPULATION_SIZE; x++){
-//            int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
-//            Chromosome_Clustering newChromosome = new Chromosome_Clustering(DIMENSION,k).inicializeChromosome().validateChromosome();
-//            popList.add(newChromosome);
-//        }
+        for(int x=0; x < GeneticAlgorithm_Example.POPULATION_SIZE; x++){
+            int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
+//            int k = 7;
+            Chromosome_Clustering newChromosome = new Chromosome_Clustering(DIMENSION,k).inicializeChromosome().validateChromosome();
+            popList.add(newChromosome);
+        }
 
-        List<Chromosome_Clustering> auxList = Chromosome_Clustering.mainTestChromosomes(10);
-        popList.add(auxList.get(0));
-        popList.add(auxList.get(1));
-        popList.add(auxList.get(2));
-        popList.add(auxList.get(3));
-        popList.add(auxList.get(4));
-        popList.add(auxList.get(5));
-        popList.add(auxList.get(6));
-        popList.add(auxList.get(7));
-        popList.add(auxList.get(8));
-        popList.add(auxList.get(9));
+//        List<Chromosome_Clustering> auxList = Chromosome_Clustering.mainTestChromosomes(DIMENSION);
+//        popList.add(auxList.get(0));
+//        popList.add(auxList.get(1));
+//        popList.add(auxList.get(2));
+//        popList.add(auxList.get(3));
+//        popList.add(auxList.get(4));
+//        popList.add(auxList.get(5));
+//        popList.add(auxList.get(6));
 
         return new Population_Clustering(popList);
     }

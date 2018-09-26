@@ -142,9 +142,9 @@ object FeatureStatistics extends Logging {
     * @param features Chromosome with the features and K clusters to the calculation of the Chi Square index.
     * @param pathToData String with the path to the DataSet.
     * @return Return the fitness to a chromosome.
-    * @example getFitness(features, pathToData)
+    * @example getFitnessChi(features, pathToData)
     */
-  def getFitness(features: Array[Int], pathToData: String): Double = {
+  def getFitnessChi(features: Array[Int], pathToData: String): Double = {
 
     val startTime = System.nanoTime
 

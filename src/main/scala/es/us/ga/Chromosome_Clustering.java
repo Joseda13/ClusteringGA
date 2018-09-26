@@ -1,6 +1,7 @@
 package es.us.ga;
 
 import es.us.spark.mllib.clustering.validation.FeatureStatistics;
+import es.us.spark.mllib.clustering.validation.Indices;
 import org.apache.commons.math3.genetics.AbstractListChromosome;
 import org.apache.commons.math3.genetics.BinaryChromosome;
 import org.apache.commons.math3.genetics.Chromosome;
@@ -15,6 +16,7 @@ public class Chromosome_Clustering {
     private double fitness = 0;
     private int[] genes;
     private int K;
+    private int nv = 5;
 
     public Chromosome_Clustering(int dimension, int K_max){
         genes = new int[dimension+1];
@@ -22,15 +24,60 @@ public class Chromosome_Clustering {
         genes[dimension] = K;
     }
 
-    public Chromosome_Clustering inicializeChromosome (){
+    public int contAttributeGood(){
+        int cont = 0;
 
-        for (int x =0; x < genes.length - 1; x++){
+        for (int x = 0; x < nv; x++){
+            if (genes[x] == 1){
+                cont++;
+            }
+        }
+
+        return cont;
+    }
+
+    public int contDummies(){
+        int cont = 0;
+
+        for (int x = nv; x < genes.length - 1; x++){
+            if (genes[x] == 1){
+                cont++;
+            }
+        }
+
+        return cont;
+    }
+
+    public Chromosome_Clustering inicializeChromosome (){
+        for (int x = 0; x < genes.length - 1; x++){
+//        for (int x = 0; x < nv; x++){
             if (Math.random() >= 0.5){
                 genes[x] = 1;
             }else {
                 genes[x] = 0;
             }
         }
+
+//        int dummy1 = ThreadLocalRandom.current().nextInt(nv, genes.length-1);
+//        int dummy2 = ThreadLocalRandom.current().nextInt(nv, genes.length-1);
+//        int dummy3 = ThreadLocalRandom.current().nextInt(nv, genes.length-1);
+//            if (Math.random() >= 0.5){
+//                genes[dummy1] = 1;
+//            }else {
+//                genes[dummy1] = 0;
+//            }
+//
+//            if (Math.random() >= 0.5){
+//                genes[dummy2] = 1;
+//            }else {
+//                genes[dummy2] = 0;
+//            }
+
+//            if (Math.random() >= 0.5){
+//                genes[dummy3] = 1;
+//            }else {
+//                genes[dummy3] = 0;
+//            }
 
         return this;
     }
@@ -40,125 +87,115 @@ public class Chromosome_Clustering {
 
         Chromosome_Clustering c1 = new Chromosome_Clustering(dimension,4);
         c1.getGenes()[0] = 1;
-        c1.getGenes()[1] = 0;
-        c1.getGenes()[2] = 0;
-        c1.getGenes()[3] = 0;
-        c1.getGenes()[4] = 0;
+        c1.getGenes()[1] = 1;
+        c1.getGenes()[2] = 1;
+        c1.getGenes()[3] = 1;
+        c1.getGenes()[4] = 1;
         c1.getGenes()[5] = 0;
         c1.getGenes()[6] = 0;
         c1.getGenes()[7] = 0;
-        c1.getGenes()[8] = 0;
+        c1.getGenes()[8] = 1;
         c1.getGenes()[9] = 0;
-
+        c1.getGenes()[10] = 0;
+        c1.getGenes()[11] = 0;
+        c1.getGenes()[12] = 0;
+        c1.getGenes()[13] = 0;
 
         Chromosome_Clustering c2 = new Chromosome_Clustering(dimension,4);
         c2.getGenes()[0] = 1;
-        c2.getGenes()[1] = 1;
+        c2.getGenes()[1] = 0;
         c2.getGenes()[2] = 0;
         c2.getGenes()[3] = 0;
         c2.getGenes()[4] = 0;
         c2.getGenes()[5] = 0;
         c2.getGenes()[6] = 0;
         c2.getGenes()[7] = 0;
-        c2.getGenes()[8] = 0;
-        c2.getGenes()[9] = 0;
-
+        c2.getGenes()[8] = 1;
+        c2.getGenes()[9] = 1;
+        c2.getGenes()[10] = 1;
+        c2.getGenes()[11] = 0;
+        c2.getGenes()[12] = 0;
+        c2.getGenes()[13] = 0;
 
         Chromosome_Clustering c3 = new Chromosome_Clustering(dimension,4);
-        c3.getGenes()[0] = 1;
-        c3.getGenes()[1] = 1;
+        c3.getGenes()[0] = 0;
+        c3.getGenes()[1] = 0;
         c3.getGenes()[2] = 1;
         c3.getGenes()[3] = 0;
         c3.getGenes()[4] = 0;
         c3.getGenes()[5] = 0;
-        c3.getGenes()[6] = 0;
+        c3.getGenes()[6] = 1;
         c3.getGenes()[7] = 0;
         c3.getGenes()[8] = 0;
-        c3.getGenes()[9] = 0;
+        c3.getGenes()[9] = 1;
+        c3.getGenes()[10] = 0;
+        c3.getGenes()[11] = 0;
+        c3.getGenes()[12] = 1;
+        c3.getGenes()[13] = 0;
 
         Chromosome_Clustering c4 = new Chromosome_Clustering(dimension,4);
-        c4.getGenes()[0] = 1;
-        c4.getGenes()[1] = 1;
-        c4.getGenes()[2] = 1;
+        c4.getGenes()[0] = 0;
+        c4.getGenes()[1] = 0;
+        c4.getGenes()[2] = 0;
         c4.getGenes()[3] = 1;
-        c4.getGenes()[4] = 0;
-        c4.getGenes()[5] = 0;
-        c4.getGenes()[6] = 0;
+        c4.getGenes()[4] = 1;
+        c4.getGenes()[5] = 1;
+        c4.getGenes()[6] = 1;
         c4.getGenes()[7] = 0;
         c4.getGenes()[8] = 0;
         c4.getGenes()[9] = 0;
+        c4.getGenes()[10] = 0;
+        c4.getGenes()[11] = 0;
+        c4.getGenes()[12] = 0;
+        c4.getGenes()[13] = 0;
 
         Chromosome_Clustering c5 = new Chromosome_Clustering(dimension,4);
-        c5.getGenes()[0] = 1;
+        c5.getGenes()[0] = 0;
         c5.getGenes()[1] = 1;
-        c5.getGenes()[2] = 1;
-        c5.getGenes()[3] = 1;
-        c5.getGenes()[4] = 1;
-        c5.getGenes()[5] = 0;
+        c5.getGenes()[2] = 0;
+        c5.getGenes()[3] = 0;
+        c5.getGenes()[4] = 0;
+        c5.getGenes()[5] = 1;
         c5.getGenes()[6] = 0;
         c5.getGenes()[7] = 0;
-        c5.getGenes()[8] = 0;
+        c5.getGenes()[8] = 1;
         c5.getGenes()[9] = 0;
+        c5.getGenes()[10] = 1;
+        c5.getGenes()[11] = 0;
+        c5.getGenes()[12] = 0;
+        c5.getGenes()[13] = 0;
 
         Chromosome_Clustering c6 = new Chromosome_Clustering(dimension,4);
-        c6.getGenes()[0] = 1;
-        c6.getGenes()[1] = 1;
+        c6.getGenes()[0] = 0;
+        c6.getGenes()[1] = 0;
         c6.getGenes()[2] = 1;
-        c6.getGenes()[3] = 1;
+        c6.getGenes()[3] = 0;
         c6.getGenes()[4] = 1;
-        c6.getGenes()[5] = 1;
-        c6.getGenes()[6] = 0;
+        c6.getGenes()[5] = 0;
+        c6.getGenes()[6] = 1;
         c6.getGenes()[7] = 0;
         c6.getGenes()[8] = 0;
         c6.getGenes()[9] = 0;
+        c6.getGenes()[10] = 0;
+        c6.getGenes()[11] = 1;
+        c6.getGenes()[12] = 0;
+        c6.getGenes()[13] = 0;
 
         Chromosome_Clustering c7 = new Chromosome_Clustering(dimension,4);
         c7.getGenes()[0] = 1;
-        c7.getGenes()[1] = 1;
-        c7.getGenes()[2] = 1;
-        c7.getGenes()[3] = 1;
-        c7.getGenes()[4] = 1;
-        c7.getGenes()[5] = 1;
-        c7.getGenes()[6] = 1;
-        c7.getGenes()[7] = 0;
+        c7.getGenes()[1] = 0;
+        c7.getGenes()[2] = 0;
+        c7.getGenes()[3] = 0;
+        c7.getGenes()[4] = 0;
+        c7.getGenes()[5] = 0;
+        c7.getGenes()[6] = 0;
+        c7.getGenes()[7] = 1;
         c7.getGenes()[8] = 0;
         c7.getGenes()[9] = 0;
-
-        Chromosome_Clustering c8 = new Chromosome_Clustering(dimension,4);
-        c8.getGenes()[0] = 1;
-        c8.getGenes()[1] = 1;
-        c8.getGenes()[2] = 1;
-        c8.getGenes()[3] = 1;
-        c8.getGenes()[4] = 1;
-        c8.getGenes()[5] = 1;
-        c8.getGenes()[6] = 1;
-        c8.getGenes()[7] = 1;
-        c8.getGenes()[8] = 0;
-        c8.getGenes()[9] = 0;
-
-        Chromosome_Clustering c9 = new Chromosome_Clustering(dimension,4);
-        c9.getGenes()[0] = 1;
-        c9.getGenes()[1] = 1;
-        c9.getGenes()[2] = 1;
-        c9.getGenes()[3] = 1;
-        c9.getGenes()[4] = 1;
-        c9.getGenes()[5] = 1;
-        c9.getGenes()[6] = 1;
-        c9.getGenes()[7] = 1;
-        c9.getGenes()[8] = 1;
-        c9.getGenes()[9] = 0;
-
-        Chromosome_Clustering c10 = new Chromosome_Clustering(dimension,4);
-        c10.getGenes()[0] = 1;
-        c10.getGenes()[1] = 1;
-        c10.getGenes()[2] = 1;
-        c10.getGenes()[3] = 1;
-        c10.getGenes()[4] = 1;
-        c10.getGenes()[5] = 1;
-        c10.getGenes()[6] = 1;
-        c10.getGenes()[7] = 1;
-        c10.getGenes()[8] = 1;
-        c10.getGenes()[9] = 1;
+        c7.getGenes()[10] = 0;
+        c7.getGenes()[11] = 1;
+        c7.getGenes()[12] = 1;
+        c7.getGenes()[13] = 0;
 
         popList.add(c1);
         popList.add(c2);
@@ -167,9 +204,6 @@ public class Chromosome_Clustering {
         popList.add(c5);
         popList.add(c6);
         popList.add(c7);
-        popList.add(c8);
-        popList.add(c9);
-        popList.add(c10);
 
         return popList;
     }
@@ -184,8 +218,8 @@ public class Chromosome_Clustering {
         }
 
         if (cont == genes.length - 1){
-            int k = ThreadLocalRandom.current().nextInt(0, genes.length-1);
-            genes[k] = 1;
+            int index = ThreadLocalRandom.current().nextInt(0, genes.length-1);
+            genes[index] = 1;
         }
 
         return this;
@@ -205,7 +239,7 @@ public class Chromosome_Clustering {
     }
 
     public double recalculatedFitness(){
-        return FeatureStatistics.getFitness(getGenes(), GeneticAlgorithm_Example.PATHTODATA);
+        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Example.PATHTODATA);
     }
 
     public String toString(){

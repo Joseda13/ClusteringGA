@@ -1,8 +1,11 @@
 package es.us.spark.mllib.clustering.validation
 
 import breeze.linalg.min
+import es.us.spark.mllib.Utils
+import org.apache.spark
 import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 object Indices {
@@ -18,10 +21,49 @@ object Indices {
   def getInternalIndices(features: Array[Int], pathToData: String) :(Double, Double, Double, Double) = {
     val i = 1
     var s = ""
-    val K = features(features.length-1)
+//    val K = features(features.length-1)
+//
+//    val spark = SparkSession.builder()
+//      .appName(s"Featuring Clusters $K")
+//      .master("local[*]")
+//      .getOrCreate()
 
+//
+//    //Set up the global variables
+//    val idIndex = -1
+//    val classIndex = 10
+//    val delimiter = ","
+//
+//    //Load data
+//    val dataRead = spark.read
+//      .option("header", "false")
+//      .option("inferSchema", "true")
+//      .option("delimiter", delimiter)
+//      .csv(pathToData)
+////      .repartition(1)
+//      .cache()
+//
+//    //Delete ID column and class column
+//    var data = if (idIndex != -1) {
+//      dataRead.drop(s"_c$idIndex")
+//        .drop(s"_c$classIndex")
+//    } else {
+//      dataRead.drop(s"_c$classIndex")
+//    }
+//
+//    //If the gen to the chromosome if == 0, then delete its column to the DataSet
+//    for (i <- 0 to features.length - 2){
+//      if (features(i) == 0){
+//        data = data.drop(s"_c$i")
+//      }
+//    }
+//
+//    //Create a RDD with the points convert into Vectors
+//    val parsedData = data.map(_.toSeq.asInstanceOf[Seq[Double]]).rdd.map(s => Vectors.dense(s.toArray)).cache()
+
+    val K = features(features.length-1)
     val spark = SparkSession.builder()
-      .appName(s"Featuring Clusters $K")
+      .appName(s"VariablesIndices-$K")
       .master("local[*]")
       .getOrCreate()
 
@@ -29,37 +71,60 @@ object Indices {
 
     val sc = spark.sparkContext
 
-    //Set up the global variables
-    val idIndex = -1
-    val classIndex = 10
     val delimiter = ","
+    val idIndex = -1
+    val classIndex = 0
 
     //Load data
-    val dataRead = spark.read
+    var dataRead = spark.read
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", delimiter)
       .csv(pathToData)
-//      .repartition(1)
       .cache()
 
-    //Delete ID column and class column
-    var data = if (idIndex != -1) {
-      dataRead.drop(s"_c$idIndex")
-        .drop(s"_c$classIndex")
-    } else {
-      dataRead.drop(s"_c$classIndex")
-    }
+    //Delete the ID column and the class column
+    //    var data = if (idIndex != -1) {
+    //      dataRead.drop(s"_c$idIndex")
+    //        .withColumnRenamed(dataRead.columns(classIndex), "class")
+    //    } else {
+    //      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+    //    }
+
+    var dataFeatures = dataRead.drop(s"_c$classIndex")
 
     //If the gen to the chromosome if == 0, then delete its column to the DataSet
     for (i <- 0 to features.length - 2){
       if (features(i) == 0){
-        data = data.drop(s"_c$i")
+        val index = i + 1
+        dataFeatures = dataFeatures.drop(s"_c$index")
       }
     }
 
-    //Create a RDD with the points convert into Vectors
-    val parsedData = data.map(_.toSeq.asInstanceOf[Seq[Double]]).rdd.map(s => Vectors.dense(s.toArray)).cache()
+    //Save all columns less the class column
+    val columnsDataSet = dataFeatures.columns
+
+    val parsedData = dataRead.rdd.map { r =>
+
+      //Create a Array[Double] with the values of each column to the DataSet read
+      val vectorValues = for (co <- columnsDataSet) yield{
+
+        //If the column number have two digits
+        if(co.length == 4) {
+          r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+        }
+        //If the column number have one digit
+        else {
+          r.getDouble(co.charAt(2).toInt - 48)
+        }
+      }
+
+      //Create a Vector with the Array[Vector] of each row in the DataSet read
+      val auxVector = Vectors.dense(vectorValues)
+
+      //Return the Cluster ID and the Vector for each row in the DataSet read
+      (auxVector)
+    }
 
     //Create the clusters using the K-Means algorithm to Spark
     val clusters = new KMeans()
@@ -79,21 +144,21 @@ object Indices {
     //val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
 
     //Get Silhoutte index: (intercluster - intracluster)/Max(intercluster,intracluster)
-    val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
-    s += i + ";" + silhoutte + ";"
-
-    //DUNN
-
-    //Min distance between centroids
-    val minA = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).min()
-
-    //Max distance from points to its centroid
-    val maxB = parsedData.map { x =>
-      Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
-    }.max
-
-    //Get Dunn index: Mín(Dist centroides al centroide)/Max(dist punto al centroide)
-    val dunn = minA / maxB
+//    val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
+//    s += i + ";" + silhoutte + ";"
+//
+//    //DUNN
+//
+//    //Min distance between centroids
+//    val minA = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).min()
+//
+//    //Max distance from points to its centroid
+//    val maxB = parsedData.map { x =>
+//      Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
+//    }.max
+//
+//    //Get Dunn index: Mín(Dist centroides al centroide)/Max(dist punto al centroide)
+//    val dunn = minA / maxB
 
     //DAVIES-BOULDIN
     val avgCentroid = parsedData.map { x =>
@@ -119,12 +184,12 @@ object Indices {
 
     val bouldin = davis / features(features.length-1)
 
-    //WSSSE
-    val wssse = clusters.computeCost(parsedData)
+//    //WSSSE
+//    val wssse = clusters.computeCost(parsedData)
 
     spark.stop()
 
-    (silhoutte, dunn, bouldin, wssse)
+    (0d, 0d, bouldin, 0d)
   }
 
   /**
@@ -644,6 +709,294 @@ object Indices {
     dunn = inter / intra
 
     (inter, intra, dunn)
+  }
+
+  def getFitnessDunn(features: Array[Int], pathToFile: String): Double = {
+    val K = features(features.length-1)
+    val spark = SparkSession.builder()
+      .appName(s"VariablesIndices-$K")
+      .master("local[*]")
+      .getOrCreate()
+
+    val delimiter = ","
+    val idIndex = -1
+    val classIndex = 0
+
+    //Load data
+    var dataRead = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .option("delimiter", delimiter)
+      .csv(pathToFile)
+      .cache()
+
+    //Delete the ID column and the class column
+//    var data = if (idIndex != -1) {
+//      dataRead.drop(s"_c$idIndex")
+//        .withColumnRenamed(dataRead.columns(classIndex), "class")
+//    } else {
+//      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+//    }
+
+    var dataFeatures = dataRead.drop(s"_c$classIndex")
+
+    //If the gen to the chromosome if == 0, then delete its column to the DataSet
+    for (i <- 0 to features.length - 2){
+      if (features(i) == 0){
+        val index = i + 1
+        dataFeatures = dataFeatures.drop(s"_c$index")
+      }
+    }
+
+    //Save all columns less the class column
+    val columnsDataSet = dataFeatures.columns
+
+    val parsedData = dataRead.rdd.map { r =>
+
+      //Create a Array[Double] with the values of each column to the DataSet read
+      val vectorValues = for (co <- columnsDataSet) yield{
+
+        //If the column number have two digits
+        if(co.length == 4) {
+          r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+        }
+        //If the column number have one digit
+        else {
+          r.getDouble(co.charAt(2).toInt - 48)
+        }
+      }
+
+      //Create a Vector with the Array[Vector] of each row in the DataSet read
+      val auxVector = Vectors.dense(vectorValues)
+
+      //Return the Cluster ID and the Vector for each row in the DataSet read
+      (auxVector)
+    }
+
+    val clusters = KMeans.train(parsedData, K, 100)
+//  val clusters = new BisectingKMeans().setK(K).setMaxIterations(100).setSeed(Utils.whatTimeIsIt().toLong).run(parsedData)
+
+    val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
+
+    //Set up the global variables
+    var intra = 0.0
+    var inter = 0.0
+    var dunn = 0.0
+
+    //Set up the intra-cluster distance variables
+    var sum_intra = 0.0
+    var aux_intra = 0.0
+
+    //Set up the inter-cluster distance variables
+    var sum_inter = 0.0
+    var aux_inter = 0.0
+
+    //For each cluster K
+    for (k <- data.map(_._1)){
+      sum_intra = 0.0
+      val points_K = data.filter(_._1 == k)
+
+      //For i point into the cluster K
+      for (i <- points_K.flatMap(_._2)){
+
+        //Calculate the average inter-cluster distance only one time, when i point it's the first element to cluster K
+        if (i == points_K.flatMap(_._2).head) {
+
+          //For each cluster M distinct to K
+          val points_M = data.filter(_._1 != k)
+          for (m <- points_M.map(_._1)) {
+            sum_inter = 0.0
+
+            //For each j point into the cluster M
+            for (j <- points_M.filter(_._1 == m).flatMap(_._2)) {
+              //Add the distance between the i point and the j point
+              sum_inter += Vectors.sqdist(i, j)
+
+              //For each z point in the cluster K distinct to i
+              for (z <- points_K.flatMap(_._2) if z != i) {
+                //Add the distance between the i point and the p point
+                sum_inter += Vectors.sqdist(z, j)
+              }
+            }
+
+            //Calculate the average inter-cluster distance between the cluster K and the cluster M
+            aux_inter = sum_inter / (points_K.map(_._2.size).head * points_M.filter(_._1 == m).map(_._2.size).head)
+
+            //Save the minimum average inter-cluster distance
+            if (inter != 0) {
+              if (aux_inter < inter) {
+                inter = aux_inter
+              }
+            } else {
+              inter = aux_inter
+            }
+          }
+        }
+
+        //For each p point in the cluster K distinct to i
+        for (p <- points_K.flatMap(_._2) if p != i){
+          //Add the distance between the i point and the p point
+          sum_intra += Vectors.sqdist(i,p)
+        }
+      }
+
+      //Calculate the average intra-cluster distance in the cluster K
+      aux_intra = sum_intra / (points_K.map(_._2.size).head * (points_K.map(_._2.size).head - 1))
+
+      //Save the maximum average intra-cluster distance
+      if (intra != 0){
+        if (aux_intra > intra){
+          intra = aux_intra
+        }
+      } else {
+        intra = aux_intra
+      }
+    }
+
+    //Calculate the dunn measure = minimum average inter-cluster distance / maximum average intra-cluster distance
+    dunn = inter / intra
+
+    (dunn)
+  }
+
+  def getFitnessSilhouette(features: Array[Int], pathToFile: String): Double = {
+    val K = features(features.length-1)
+    val spark = SparkSession.builder()
+      .appName(s"VariablesIndices-$K")
+      .master("local[*]")
+      .getOrCreate()
+
+    val delimiter = ","
+    val idIndex = -1
+    val classIndex = 0
+
+    //Load data
+    var dataRead = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .option("delimiter", delimiter)
+      .csv(pathToFile)
+      .cache()
+
+    //Delete the ID column and the class column
+    //    var data = if (idIndex != -1) {
+    //      dataRead.drop(s"_c$idIndex")
+    //        .withColumnRenamed(dataRead.columns(classIndex), "class")
+    //    } else {
+    //      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+    //    }
+
+    var dataFeatures = dataRead.drop(s"_c$classIndex")
+
+    //If the gen to the chromosome if == 0, then delete its column to the DataSet
+    for (i <- 0 to features.length - 2){
+      if (features(i) == 0){
+        val index = i + 1
+        dataFeatures = dataFeatures.drop(s"_c$index")
+      }
+    }
+
+    //Save all columns less the class column
+    val columnsDataSet = dataFeatures.columns
+
+    val parsedData = dataRead.rdd.map { r =>
+
+      //Create a Array[Double] with the values of each column to the DataSet read
+      val vectorValues = for (co <- columnsDataSet) yield{
+
+        //If the column number have two digits
+        if(co.length == 4) {
+          r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+        }
+        //If the column number have one digit
+        else {
+          r.getDouble(co.charAt(2).toInt - 48)
+        }
+      }
+
+      //Create a Vector with the Array[Vector] of each row in the DataSet read
+      val auxVector = Vectors.dense(vectorValues)
+
+      //Return the Cluster ID and the Vector for each row in the DataSet read
+      (auxVector)
+    }
+
+    val clusters = KMeans.train(parsedData, K, 100)
+    //  val clusters = new BisectingKMeans().setK(K).setMaxIterations(100).setSeed(Utils.whatTimeIsIt().toLong).run(parsedData)
+
+    val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
+
+    //Set up the global variables
+    var b = 0.0
+    var a = 0.0
+    var silhouette = 0.0
+
+    //Set up each iteration variables
+    var b_i_j = 0.0
+    var a_i_p = 0.0
+    var b_i = 0.0
+    var a_i = 0.0
+    var s_i = 0.0
+
+    //For each cluster K
+    for (k <- data.map(_._1)){
+      val points_K = data.filter(_._1 == k)
+
+      //For each i point into the cluster K
+      for (i <- points_K.flatMap(_._2)){
+        //Reset the variables to each i point
+        b_i = 0
+        a_i = 0
+        s_i = 0
+
+        a_i_p = 0.0
+
+        //For each cluster M distinct to K
+        val points_M = data.filter(_._1 != k)
+        for (m <- points_M.map(_._1)){
+          b_i_j = 0.0
+
+          //For each j point into the cluster M
+          for (j <- points_M.filter(_._1 == m).flatMap(_._2)){
+            //Add the distance between the i point and j point
+            b_i_j += Vectors.sqdist(i,j)
+          }
+
+          //Calculate the average distance between the i point and the cluster M
+          b_i_j = b_i_j / (points_M.filter(_._1 == m).map(_._2.size).head)
+
+          //Save the minimum average distance between the i point and the cluster M
+          if (b_i != 0){
+            if (b_i_j < b_i){
+              b_i = b_i_j
+            }
+          } else{
+            b_i = b_i_j
+          }
+
+        }
+
+        //For each p point into the cluster K distinct to i point
+        for (p <- points_K.flatMap(_._2) if p != i){
+          //Add the distance between the i point and the p point
+          a_i_p += Vectors.sqdist(i,p)
+        }
+
+        //Calculate the average distance between the i point and the rest of point in the cluster K
+        a_i = a_i_p / (points_K.map(_._2.size).head - 1)
+
+        //Calculate the silhouette to the i point
+        s_i = (b_i - a_i) / Math.max(b_i,a_i)
+
+        //Update the global variables
+        silhouette += s_i
+      }
+    }
+
+    //Calculate the average global variables
+    silhouette = silhouette / data.map(_._2.size).sum
+
+    (silhouette)
   }
 
   /**
