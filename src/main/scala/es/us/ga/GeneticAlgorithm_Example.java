@@ -15,10 +15,10 @@ public class GeneticAlgorithm_Example {
     public static final double CROSSOVER_RATE = 0.95;
     public static final int NUM_ELIT_CHROMOSOMES = 2;
     public static final int TOURNAMENT_SIZE = 2;
-    private static final int DIMENSION = 10;
+    public static int DIMENSION = 7;
     private static final int K_MAX = 11;
-//    public static String PATHTODATA = "B:\\DataSets_Genetics\\K4-14D-4G-5000p-Version_0_1_2.csv";
-    public static String PATHTODATA = "B:\\K7-10D-5V-5DU.csv";
+    public static String PATHTODATA = "";
+
     public Population_Clustering evolve (Population_Clustering polutaion){
         return mutationPopulation(crossoverPopulation(polutaion));
     }
@@ -64,6 +64,7 @@ public class GeneticAlgorithm_Example {
 
     private Chromosome_Clustering crossoverChromosome(Chromosome_Clustering chromosome1, Chromosome_Clustering chromosome2){
         Chromosome_Clustering crossoverChromosome = new Chromosome_Clustering(chromosome1.getGenes().length-1, K_MAX);
+//        crossoverChromosome.setNV(NUMBER_VARIABLES);
 
         for (int i=0; i < chromosome1.getGenes().length; i++){
             if (Math.random() < CROSSOVER_RATE){
@@ -163,6 +164,7 @@ public class GeneticAlgorithm_Example {
             int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
 //            int k = 7;
             Chromosome_Clustering newChromosome = new Chromosome_Clustering(DIMENSION,k).inicializeChromosome().validateChromosome();
+//            newChromosome.setNV(NUMBER_VARIABLES);
             popList.add(newChromosome);
         }
 
@@ -177,4 +179,13 @@ public class GeneticAlgorithm_Example {
 
         return new Population_Clustering(popList);
     }
+
+    public void setPATHTODATA(String path) {
+        PATHTODATA = path;
+    }
+
+    public void setDimension(Integer dimension) {
+        DIMENSION = dimension;
+    }
+
 }

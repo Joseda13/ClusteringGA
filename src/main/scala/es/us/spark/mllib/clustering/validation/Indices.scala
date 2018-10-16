@@ -1,6 +1,7 @@
 package es.us.spark.mllib.clustering.validation
 
 import breeze.linalg.min
+import es.us.ga.Chromosome_Clustering
 import es.us.spark.mllib.Utils
 import org.apache.spark
 import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
@@ -130,7 +131,7 @@ object Indices {
     val clusters = new KMeans()
       .setK(K)
       .setMaxIterations(100)
-      .setSeed(1L)
+      .setSeed(K)
       .run(parsedData)
 
     //Global Center
@@ -251,7 +252,7 @@ object Indices {
     val clusters = new KMeans()
       .setK(features(features.length-1))
       .setMaxIterations(100)
-      .setSeed(1L)
+      .setSeed(1380462500)
       .run(parsedData)
 
     //Global Center
@@ -712,6 +713,7 @@ object Indices {
   }
 
   def getFitnessDunn(features: Array[Int], pathToFile: String): Double = {
+
     val K = features(features.length-1)
     val spark = SparkSession.builder()
       .appName(s"VariablesIndices-$K")
@@ -773,10 +775,14 @@ object Indices {
       (auxVector)
     }
 
-    val clusters = KMeans.train(parsedData, K, 100)
+//    val clusters = KMeans.train(parsedData, K, 100, 1, "k-means||", 1L)
+//    val clusters = KMeans.train(parsedData, K, 100)
+    val clusters = new KMeans().setK(K).setMaxIterations(100).setSeed(K).run(parsedData)
 //  val clusters = new BisectingKMeans().setK(K).setMaxIterations(100).setSeed(Utils.whatTimeIsIt().toLong).run(parsedData)
 
     val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
+//    println("El tamaño de cada cluster es: ")
+//    data.foreach(x => println(x._2.size))
 
     //Set up the global variables
     var intra = 0.0
@@ -854,7 +860,9 @@ object Indices {
     }
 
     //Calculate the dunn measure = minimum average inter-cluster distance / maximum average intra-cluster distance
-    dunn = inter / intra
+    dunn = (inter / intra)
+
+    spark.stop()
 
     (dunn)
   }
@@ -921,8 +929,8 @@ object Indices {
       (auxVector)
     }
 
-    val clusters = KMeans.train(parsedData, K, 100)
-    //  val clusters = new BisectingKMeans().setK(K).setMaxIterations(100).setSeed(Utils.whatTimeIsIt().toLong).run(parsedData)
+//    val clusters = KMeans.train(parsedData, K, 100)
+    val clusters = new KMeans().setK(K).setMaxIterations(100).setSeed(K).run(parsedData)
 
     val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
 
@@ -995,6 +1003,8 @@ object Indices {
 
     //Calculate the average global variables
     silhouette = silhouette / data.map(_._2.size).sum
+
+    spark.stop()
 
     (silhouette)
   }

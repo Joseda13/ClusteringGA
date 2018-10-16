@@ -325,27 +325,60 @@ object FeatureStatistics extends Logging {
       val dfByCluster = dfContingencies._1
       val dfByFeature = dfContingencies._2
 
-//      println("Crosstab by cluster")
-//      dfByCluster.show()
-//      println(s"Saving crosstab by cluster into $destino-DFClusters-$numClusters..")
-//      dfByCluster.repartition(1).write
-//        .option("header", "true")
-//        .option("delimiter", "\t")
-//        .csv(s"$destino/-DFClusters-$numClusters")
-//      println(s"Done")
+      println("Crosstab by cluster")
+      dfByCluster.show()
+      println(s"Saving crosstab by cluster into $destino-DFClusters-$numClusters..")
+      dfByCluster.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino/-DFClusters-$numClusters")
+      println(s"Done")
 
-//      println("Crosstab by class")
-//      dfByFeature.show()
-//      println(s"Saving crosstab by class into $destino-DFFeatures-$numClusters..")
-//      dfByFeature.repartition(1).write
-//        .option("header", "true")
-//        .option("delimiter", "\t")
-//        .csv(s"$destino/-DFFeatures-$numClusters")
-//      println(s"Done")
+      println("Crosstab by class")
+      dfByFeature.show()
+      println(s"Saving crosstab by class into $destino-DFFeatures-$numClusters..")
+      dfByFeature.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino/-DFFeatures-$numClusters")
+      println(s"Done")
 
       calculateTotalChi(dfByCluster, dfByFeature, numClusters).toString()
 
     }.reduce(_ + _)
+
+  }
+
+  def getConfusionMatrix(featureNameList: List[String], dfResults: DataFrame, numClusters: Int, destino: String): Unit = {
+
+    featureNameList.map { featureName =>
+
+      val dfResultsRenamed = dfResults.withColumnRenamed(featureName, "class")
+
+      val dfContingencies = Feature.getContingencies(dfResultsRenamed)
+
+      val dfByCluster = dfContingencies._1
+      val dfByFeature = dfContingencies._2
+
+      println("Crosstab by cluster")
+      dfByCluster.show()
+      println(s"Saving crosstab by cluster into $destino-DFClusters-$numClusters..")
+      dfByCluster.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino/-DFClusters-$numClusters")
+      println(s"Done")
+
+      println("Crosstab by class")
+      dfByFeature.show()
+      println(s"Saving crosstab by class into $destino-DFFeatures-$numClusters..")
+      dfByFeature.repartition(1).write
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .csv(s"$destino/-DFFeatures-$numClusters")
+      println(s"Done")
+
+    }
 
   }
 
