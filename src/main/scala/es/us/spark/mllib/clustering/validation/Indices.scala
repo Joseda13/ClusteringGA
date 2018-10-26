@@ -862,12 +862,11 @@ object Indices {
     //Calculate the dunn measure = minimum average inter-cluster distance / maximum average intra-cluster distance
     dunn = (inter / intra)
 
-    spark.stop()
-
     (dunn)
   }
 
   def getFitnessSilhouette(features: Array[Int], pathToFile: String): Double = {
+
     val K = features(features.length-1)
     val spark = SparkSession.builder()
       .appName(s"VariablesIndices-$K")
@@ -1003,8 +1002,6 @@ object Indices {
 
     //Calculate the average global variables
     silhouette = silhouette / data.map(_._2.size).sum
-
-    spark.stop()
 
     (silhouette)
   }

@@ -24,8 +24,8 @@ object MainGenerateDB {
 
     val sc = new SparkContext(conf)
 
-    var features = 10      //Number of features (columns)
-    var dummies = 10
+    var features = 3   //Number of features (columns)
+    var dummies = 20
     var tags = 5
     var K = 7       //Number of clusters
     var minimumPoints = 500    //Instances minimum per cluster
@@ -35,11 +35,12 @@ object MainGenerateDB {
     val withTag = true   //True if the class have to be included
 
     val test = createDataBase(features, tags, K, desviation, dummies, minimumPoints, maximumPoints, destination, 0)
+//    val test = allCombinations(features, tags, destination)
 
     sc.stop()
   }
 
-  def allCombinations(features: Int, tags: Int, number_cluster: Int, dummies: Int, destination: String): Unit ={
+  def allCombinations(features: Int, tags: Int, destination: String): Unit ={
 
     val spark = SparkSession.builder()
       .appName(s"CreateDataBase")
@@ -53,12 +54,85 @@ object MainGenerateDB {
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", ",")
-      .csv(s"C:\\Users\\Jose David\\IdeaProjects\\ClusteringGA\\V6-T5-25-0201810101158\\part-00000")
+      .csv(s"B:\\N=6.txt").cache()
 
-    val auxArrayF = data.map(row => Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3),row.getInt(4),row.getInt(5)) )
+//    val aux0_final = data.map{row =>
+//      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9), 0)
+//    }
+//    val aux1_final = data.map{row =>
+//      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9), 1)
+//    }
+//    val aux2_final = data.map{row =>
+//      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9), 2)
+//    }
+//    val aux3_final = data.map{row =>
+//      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9), 3)
+//    }
+//    val aux4_final = data.map{row =>
+//      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9), 4)
+//    }
+//
+//    val aux0_initial = data.map{row =>
+//      Array(0, row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9))
+//    }
+//    val aux1_initial = data.map{row =>
+//      Array(1, row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9))
+//    }
+//    val aux2_initial = data.map{row =>
+//      Array(2, row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9))
+//    }
+//    val aux3_initial = data.map{row =>
+//      Array(3, row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9))
+//    }
+//    val aux4_initial = data.map{row =>
+//      Array(4, row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8),
+//        row.getInt(9))
+//    }
 
-    val testPer = auxArrayF.flatMap(row => row.permutations)
-    println("Tamano : " + testPer.collect().length)
+    val auxTotal = data.map{row =>
+      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4))
+    }
+
+    val aux = Array.fill(2)(0 to tags-1).flatten.combinations(2).flatMap(_.permutations).toArray
+
+    val testwtwtrt = auxTotal.collect().flatMap{
+      row =>
+
+        val auxArray = for (index <- aux) yield{
+          val auxZip = row.union(index)
+          auxZip
+        }
+
+        auxArray
+    }
+
+//    println("el numero: " + spark.sparkContext.parallelize(testwtwtrt).toDF().count())
+//    val savedDataFrame = spark.sparkContext.parallelize(prueba2).toDF().cache()
+    val prueba2 = Random.shuffle(testwtwtrt.toSeq).toArray
+
+//    val testeret = auxTotal.collect().zip(prueba2).map(value => value._1.union(value._2))
+//    spark.sparkContext.parallelize(testeret).toDF().show(25, false)
+
+//    val auxTotal = aux0_final.union(aux0_initial).union(aux1_final).union(aux1_initial).union(aux2_final).union(aux2_initial)
+//      .union(aux3_final).union(aux3_initial).union(aux4_final).union(aux4_initial)
+
+//    val auxArrayF = data.map(row => Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3),row.getInt(4),row.getInt(5)) )
+
+    val testPer = spark.sparkContext.parallelize(prueba2).flatMap(row => row.permutations).collect()
+//    val aux = Array.fill(features)(0 to tags-1).flatten.combinations(features).flatMap(_.permutations).toArray
+//    val testAux = spark.sparkContext.parallelize(aux).toDF()
+//    testAux.show(25, false)
+
+//    println("Tamano : " + testPer.collect().length)
 //    spark.sparkContext.parallelize(testPer.collect()).toDF().distinct().rdd.map(x => x.toString.replace("[", "").replace("]", "")
 //      .replace("WrappedArray(", "").replace(")", "").replace(" ", ""))
 //      .coalesce(1, shuffle = true)
@@ -66,10 +140,10 @@ object MainGenerateDB {
 //    println("long: " + testPer.length)
 //    auxArray.show(10, false)
 
-    val prueba = Random.shuffle(auxArrayF.collect().toSeq)
+//    val prueba = Random.shuffle(testeret.toSeq).toArray
 
-//    val index = ThreadLocalRandom.current.nextInt(0, prueba.length - 1)
-//    val elementoRandom = prueba.apply(index)
+    val index = ThreadLocalRandom.current.nextInt(0, testPer.length - 1)
+    val elementoRandom = testPer.apply(index)
 //    elementoRandom.updated(0,4)
 //    elementoRandom.updated(1,4)
 //    elementoRandom.updated(2,4)
@@ -77,16 +151,15 @@ object MainGenerateDB {
 
     val resultTotal = Array.ofDim[Int](30,features)
 
-//    for (in <- 0 to resultTotal.length - 1){
-//      resultTotal.update(in, elementoRandom.toArray)
-//    }
+    for (in <- 0 to resultTotal.length - 1){
+      resultTotal.update(in, elementoRandom)
+    }
 
-    var result = Array.ofDim[Int](number_cluster,features)
-    var indexResult = 0
+    var indexResult = 1
 
-    for (arrayAux <- prueba){
+    for (arrayAux <- testPer){
 
-      val arrayAuxCombinations = pairCombinationArrayInt(arrayAux.toArray)
+      val arrayAuxCombinations = pairCombinationArrayInt(arrayAux)
 
       if (!resultTotal.contains(arrayAux)) {
 
@@ -107,10 +180,10 @@ object MainGenerateDB {
         }
 
         if (contRepeat < 1) {
-          resultTotal.update(indexResult, arrayAux.toArray)
+          resultTotal.update(indexResult, arrayAux)
           indexResult += 1
-          //          println("Find a combination number: " + indexResult)
         }
+
       }
     }
 
@@ -119,13 +192,15 @@ object MainGenerateDB {
     val testResultTotal = spark.sparkContext.parallelize(resultTotal).toDF().distinct()
 //    testResultTotal.show(30, false)
     if (testResultTotal.count() < 25){
+//      testResultTotal.show(30, false)
+      allCombinations(features, tags, destination)
 //      createDataBase(features, tags, number_cluster, desviation, dummies, minimumPoints, maximumPoints, destination, index + 1)
     }else {
       testResultTotal.show(30, false)
-//      testResultTotal.rdd.map(x => x.toString.replace("[", "").replace("]", "")
-//        .replace("WrappedArray(", "").replace(")", "").replace(" ", ""))
-//        .coalesce(1, shuffle = true)
-//        .saveAsTextFile(s"V$features-T$tags-$indexResult" + Utils.whatTimeIsIt())
+      testResultTotal.rdd.map(x => x.toString.replace("[", "").replace("]", "")
+        .replace("WrappedArray(", "").replace(")", "").replace(" ", ""))
+        .coalesce(1, shuffle = true)
+        .saveAsTextFile(s"V$features-T$tags-$indexResult" + Utils.whatTimeIsIt())
       println("Save file...")
     }
 
@@ -160,11 +235,26 @@ object MainGenerateDB {
 //    println("Hay diferentes: " + data.count())
 //    val aux0 = data.map{row =>
 //      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8)
-//        , row.getInt(9))
+//        , row.getInt(9)
+//        , row.getInt(10), row.getInt(11), row.getInt(12), row.getInt(13), row.getInt(14), row.getInt(15), row.getInt(16), row.getInt(17)
+//      ,row.getInt(18), row.getInt(19))
+//      )
 //    }.collect()
 
     //Create all permutations between the tags into the number of features
     val aux = Array.fill(features)(0 to tags-1).flatten.combinations(features).flatMap(_.permutations).toArray
+//    val aux = Array.fill(2)(0 to tags-1).flatten.combinations(2).flatMap(_.permutations).toArray
+
+//    val auxTotal = aux.map{row =>
+//      (row.apply(0), row.apply(1))
+//    }
+
+//    val savedDataFrame = spark.sparkContext.parallelize(auxTotal.toSeq).toDF().cache()
+//    savedDataFrame.show(30, false)
+//    savedDataFrame.rdd.map(x => x.toString.replace("[", "").replace("]", "")
+//      .replace("WrappedArray(", "").replace(")", "").replace(" ", ""))
+//      .coalesce(1, shuffle = true)
+//      .saveAsTextFile(s"V$features-T$tags" + Utils.whatTimeIsIt())
     val prueba = Random.shuffle(aux.toSeq)
 
 //    val index = ThreadLocalRandom.current.nextInt(0, prueba.length - 1)
@@ -180,7 +270,7 @@ object MainGenerateDB {
     var result = Array.ofDim[Int](number_cluster,features)
     var indexResult = 1
 
-    for (arrayAux <- aux){
+    for (arrayAux <- prueba){
 
       val arrayAuxCombinations = pairCombinationArrayInt(arrayAux)
 
@@ -213,6 +303,8 @@ object MainGenerateDB {
     println(s"Different valid combinations number with $tags tags and $features features: " + (indexResult) )
 
     result = Random.shuffle(resultTotal.take(indexResult).toSeq).toArray.take(number_cluster)
+//    val testResultTotal = spark.sparkContext.parallelize(resultTotal).toDF()
+//    testResultTotal.show(30)
 //    result = Random.shuffle(aux0.take(7).toSeq).toArray.take(number_cluster)
 
     val testResult = spark.sparkContext.parallelize(result).toDF()

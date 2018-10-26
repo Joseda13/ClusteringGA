@@ -13,57 +13,102 @@ object MainTestGA extends Logging{
 
     val spark = SparkSession.builder()
       .appName("Genetic Algorithm")
-//      .master("local[*]")
+      .master("local[*]")
       .getOrCreate()
 
     val startTime = System.nanoTime
 
-    val pathDataSets = "hdfs://hdfs/jdmartin/DataSets/"
-    val pathResults = "hdfs://hdfs/jdmartin/Results/Silhoutte/"
+//    val pathDataSets = "hdfs://hdfs/jdmartin/DataSets/"
+//    val pathResults = "hdfs://hdfs/jdmartin/Results/Dunn/"
+
+//    val pathDataSets = "data/DataSets/"
+//    val pathResults = "Results/Silhoutte_2/"
 
     var origen = ""
     var destination = ""
     var dimension = 0
 
-//    val pathDataSets = "B:\\Genetic_test\\"
-//    val pathResults = "B:\\Results\\Dunn\\"
+    val pathDataSets = "B:\\Genetic_test\\"
+    val pathResults = "B:\\Results\\Silhoutte\\"
 
     val arguments = List(
-      Array[String](pathDataSets+"K3-N3-D3-DES0_03", pathResults+"K3-N3-D3-DES0_03", "6"),
-      Array[String](pathDataSets+"K3-N3-D5-DES0_03", pathResults+"K3-N3-D5-DES0_03", "8"),
-      Array[String](pathDataSets+"K3-N3-D10-DES0_03", pathResults+"K3-N3-D10-DES0_03", "13"),
+//      Array[String](pathDataSets+"K3-N3-D3-DES0_03", pathResults+"K3-N3-D3-DES0_03", "6"),
+//      Array[String](pathDataSets+"K3-N3-D5-DES0_03", pathResults+"K3-N3-D5-DES0_03", "8"),
+//      Array[String](pathDataSets+"K3-N3-D10-DES0_03", pathResults+"K3-N3-D10-DES0_03", "13"),
+      Array[String](pathDataSets+"K3-N3-D15-DES0_03", pathResults+"K3-N3-D15-DES0_03", "18"),
+      Array[String](pathDataSets+"K3-N3-D20-DES0_03", pathResults+"K3-N3-D20-DES0_03", "23"),
 
-      Array[String](pathDataSets+"K5-N3-D3-DES0_03", pathResults+"K5-N3-D3-DES0_03", "6"),
-      Array[String](pathDataSets+"K5-N3-D5-DES0_03", pathResults+"K5-N3-D5-DES0_03", "8"),
-      Array[String](pathDataSets+"K5-N3-D10-DES0_03", pathResults+"K5-N3-D10-DES0_03", "13"),
+//      Array[String](pathDataSets+"K5-N3-D3-DES0_03", pathResults+"K5-N3-D3-DES0_03", "6"),
+//      Array[String](pathDataSets+"K5-N3-D5-DES0_03", pathResults+"K5-N3-D5-DES0_03", "8"),
+//      Array[String](pathDataSets+"K5-N3-D10-DES0_03", pathResults+"K5-N3-D10-DES0_03", "13"),
+      Array[String](pathDataSets+"K5-N3-D15-DES0_03", pathResults+"K5-N3-D15-DES0_03", "18"),
+      Array[String](pathDataSets+"K5-N3-D20-DES0_03", pathResults+"K5-N3-D20-DES0_03", "23"),
 
-      Array[String](pathDataSets+"K7-N3-D3-DES0_03", pathResults+"K7-N3-D3-DES0_03", "6"),
-      Array[String](pathDataSets+"K7-N3-D5-DES0_03", pathResults+"K7-N3-D5-DES0_03", "8"),
-      Array[String](pathDataSets+"K7-N3-D10-DES0_03", pathResults+"K7-N3-D10-DES0_03", "13"),
+//      Array[String](pathDataSets+"K7-N3-D3-DES0_03", pathResults+"K7-N3-D3-DES0_03", "6"),
+//      Array[String](pathDataSets+"K7-N3-D5-DES0_03", pathResults+"K7-N3-D5-DES0_03", "8"),
+//      Array[String](pathDataSets+"K7-N3-D10-DES0_03", pathResults+"K7-N3-D10-DES0_03", "13"),
+      Array[String](pathDataSets+"K7-N3-D15-DES0_03", pathResults+"K7-N3-D15-DES0_03", "18"),
+      Array[String](pathDataSets+"K7-N3-D20-DES0_03", pathResults+"K7-N3-D20-DES0_03", "23"),
 
-      Array[String](pathDataSets+"K3-N5-D3-DES0_03", pathResults+"K3-N5-D3-DES0_03", "8"),
-      Array[String](pathDataSets+"K3-N5-D5-DES0_03", pathResults+"K3-N5-D5-DES0_03", "10"),
-      Array[String](pathDataSets+"K3-N5-D10-DES0_03", pathResults+"K3-N5-D10-DES0_03", "15"),
+//      Array[String](pathDataSets+"K3-N5-D3-DES0_03", pathResults+"K3-N5-D3-DES0_03", "8"),
+//      Array[String](pathDataSets+"K3-N5-D5-DES0_03", pathResults+"K3-N5-D5-DES0_03", "10"),
+//      Array[String](pathDataSets+"K3-N5-D10-DES0_03", pathResults+"K3-N5-D10-DES0_03", "15"),
+//      Array[String](pathDataSets+"K3-N5-D15-DES0_03", pathResults+"K3-N5-D15-DES0_03", "20"),
+      Array[String](pathDataSets+"K3-N5-D20-DES0_03", pathResults+"K3-N5-D20-DES0_03", "25"),
 
-      Array[String](pathDataSets+"K5-N5-D3-DES0_03", pathResults+"K5-N5-D3-DES0_03", "8"),
-      Array[String](pathDataSets+"K5-N5-D5-DES0_03", pathResults+"K5-N5-D5-DES0_03", "10"),
-      Array[String](pathDataSets+"K5-N5-D10-DES0_03", pathResults+"K5-N5-D10-DES0_03", "15"),
+//      Array[String](pathDataSets+"K5-N5-D3-DES0_03", pathResults+"K5-N5-D3-DES0_03", "8"),
+//      Array[String](pathDataSets+"K5-N5-D5-DES0_03", pathResults+"K5-N5-D5-DES0_03", "10"),
+//      Array[String](pathDataSets+"K5-N5-D10-DES0_03", pathResults+"K5-N5-D10-DES0_03", "15"),
+//      Array[String](pathDataSets+"K5-N5-D15-DES0_03", pathResults+"K5-N5-D15-DES0_03", "20"),
+      Array[String](pathDataSets+"K5-N5-D20-DES0_03", pathResults+"K5-N5-D20-DES0_03", "25"),
 
-      Array[String](pathDataSets+"K7-N5-D3-DES0_03", pathResults+"K7-N5-D3-DES0_03", "8"),
-      Array[String](pathDataSets+"K7-N5-D5-DES0_03", pathResults+"K7-N5-D5-DES0_03", "10"),
-      Array[String](pathDataSets+"K7-N5-D10-DES0_03", pathResults+"K7-N5-D10-DES0_03", "15"),
+//      Array[String](pathDataSets+"K7-N5-D3-DES0_03", pathResults+"K7-N5-D3-DES0_03", "8"),
+//      Array[String](pathDataSets+"K7-N5-D5-DES0_03", pathResults+"K7-N5-D5-DES0_03", "10"),
+//      Array[String](pathDataSets+"K7-N5-D10-DES0_03", pathResults+"K7-N5-D10-DES0_03", "15"),
+      Array[String](pathDataSets+"K7-N5-D15-DES0_03", pathResults+"K7-N5-D15-DES0_03", "20"),
+      Array[String](pathDataSets+"K7-N5-D20-DES0_03", pathResults+"K7-N5-D20-DES0_03", "25"),
 
-      Array[String](pathDataSets+"K3-N10-D3-DES0_03", pathResults+"K3-N10-D3-DES0_03", "13"),
-      Array[String](pathDataSets+"K3-N10-D5-DES0_03", pathResults+"K3-N10-D5-DES0_03", "15"),
-      Array[String](pathDataSets+"K3-N10-D10-DES0_03", pathResults+"K3-N10-D10-DES0_03", "20"),
+//      Array[String](pathDataSets+"K3-N10-D3-DES0_03", pathResults+"K3-N10-D3-DES0_03", "13"),
+//      Array[String](pathDataSets+"K3-N10-D5-DES0_03", pathResults+"K3-N10-D5-DES0_03", "15"),
+//      Array[String](pathDataSets+"K3-N10-D10-DES0_03", pathResults+"K3-N10-D10-DES0_03", "20"),
+//      Array[String](pathDataSets+"K3-N10-D15-DES0_03", pathResults+"K3-N10-D15-DES0_03", "25"),
+//      Array[String](pathDataSets+"K3-N10-D20-DES0_03", pathResults+"K3-N10-D20-DES0_03", "30"),
 
-      Array[String](pathDataSets+"K5-N10-D3-DES0_03", pathResults+"K5-N10-D3-DES0_03", "13"),
-      Array[String](pathDataSets+"K5-N10-D5-DES0_03", pathResults+"K5-N10-D5-DES0_03", "15"),
-      Array[String](pathDataSets+"K5-N10-D10-DES0_03", pathResults+"K5-N10-D10-DES0_03", "20"),
+//      Array[String](pathDataSets+"K5-N10-D3-DES0_03", pathResults+"K5-N10-D3-DES0_03", "13"),
+//      Array[String](pathDataSets+"K5-N10-D5-DES0_03", pathResults+"K5-N10-D5-DES0_03", "15"),
+//      Array[String](pathDataSets+"K5-N10-D10-DES0_03", pathResults+"K5-N10-D10-DES0_03", "20"),
+      Array[String](pathDataSets+"K5-N10-D15-DES0_03", pathResults+"K5-N10-D15-DES0_03", "25"),
+//      Array[String](pathDataSets+"K5-N10-D20-DES0_03", pathResults+"K5-N10-D20-DES0_03", "30"),
 
-      Array[String](pathDataSets+"K7-N10-D3-DES0_03", pathResults+"K7-N10-D3-DES0_03", "13"),
-      Array[String](pathDataSets+"K7-N10-D5-DES0_03", pathResults+"K7-N10-D5-DES0_03", "15"),
-      Array[String](pathDataSets+"K7-N10-D10-DES0_03", pathResults+"K7-N10-D10-DES0_03", "20")
+//      Array[String](pathDataSets+"K7-N10-D3-DES0_03", pathResults+"K7-N10-D3-DES0_03", "13"),
+//      Array[String](pathDataSets+"K7-N10-D5-DES0_03", pathResults+"K7-N10-D5-DES0_03", "15"),
+//      Array[String](pathDataSets+"K7-N10-D10-DES0_03", pathResults+"K7-N10-D10-DES0_03", "20"),
+//      Array[String](pathDataSets+"K7-N10-D15-DES0_03", pathResults+"K7-N10-D15-DES0_03", "25"),
+      Array[String](pathDataSets+"K7-N10-D20-DES0_03", pathResults+"K7-N10-D20-DES0_03", "30"),
+
+//      Array[String](pathDataSets+"K3-N15-D3-DES0_03", pathResults+"K3-N15-D3-DES0_03", "18"),
+      Array[String](pathDataSets+"K3-N15-D5-DES0_03", pathResults+"K3-N15-D5-DES0_03", "20"),
+      Array[String](pathDataSets+"K3-N15-D10-DES0_03", pathResults+"K3-N15-D10-DES0_03", "25"),
+      Array[String](pathDataSets+"K3-N15-D15-DES0_03", pathResults+"K3-N15-D15-DES0_03", "30"),
+      Array[String](pathDataSets+"K3-N15-D20-DES0_03", pathResults+"K3-N15-D20-DES0_03", "35"),
+
+//      Array[String](pathDataSets+"K5-N15-D3-DES0_03", pathResults+"K5-N15-D3-DES0_03", "18"),
+      Array[String](pathDataSets+"K5-N15-D5-DES0_03", pathResults+"K5-N15-D5-DES0_03", "20"),
+      Array[String](pathDataSets+"K5-N15-D10-DES0_03", pathResults+"K5-N15-D10-DES0_03", "25"),
+      Array[String](pathDataSets+"K5-N15-D15-DES0_03", pathResults+"K5-N15-D15-DES0_03", "30"),
+      Array[String](pathDataSets+"K5-N15-D20-DES0_03", pathResults+"K5-N15-D20-DES0_03", "35"),
+
+      Array[String](pathDataSets+"K3-N20-D3-DES0_03", pathResults+"K3-N20-D3-DES0_03", "23"),
+      Array[String](pathDataSets+"K3-N20-D5-DES0_03", pathResults+"K3-N20-D5-DES0_03", "25"),
+      Array[String](pathDataSets+"K3-N20-D10-DES0_03", pathResults+"K3-N20-D10-DES0_03", "30"),
+      Array[String](pathDataSets+"K3-N20-D15-DES0_03", pathResults+"K3-N20-D15-DES0_03", "35"),
+      Array[String](pathDataSets+"K3-N20-D20-DES0_03", pathResults+"K3-N20-D20-DES0_03", "40"),
+
+      Array[String](pathDataSets+"K5-N20-D3-DES0_03", pathResults+"K5-N20-D3-DES0_03", "23"),
+      Array[String](pathDataSets+"K5-N20-D5-DES0_03", pathResults+"K5-N20-D5-DES0_03", "25"),
+      Array[String](pathDataSets+"K5-N20-D10-DES0_03", pathResults+"K5-N20-D10-DES0_03", "30"),
+      Array[String](pathDataSets+"K5-N20-D15-DES0_03", pathResults+"K5-N20-D15-DES0_03", "35"),
+      Array[String](pathDataSets+"K5-N20-D20-DES0_03", pathResults+"K5-N20-D20-DES0_03", "40")
     )
 
     for (data <- arguments){
@@ -77,6 +122,10 @@ object MainTestGA extends Logging{
       geneticAlgorithm.setPATHTODATA(origen)
 
       val resultGenetic = new Array[String](GeneticAlgorithm_Example.NUM_GENERATIONS + 1)
+
+      for (in <- 0 to resultGenetic.length - 1){
+        resultGenetic.update(in, "")
+      }
 
       println("*******************************")
       println("*********GA CLUSTERING*********")
@@ -100,20 +149,30 @@ object MainTestGA extends Logging{
 
       resultGenetic.update(0, resultInitial)
 
-      //    println("Chromosomes of Initial Generaton:")
-      //    population.getChromosomes.toArray().foreach(println(_))
+//      println("Chromosomes of Initial Generaton:")
+//      population.getChromosomes.toArray().foreach(println(_))
 
       val elapsedIter0 = (System.nanoTime - startTime) / 1e9d
       logInfo("Time for iteration 0: " + elapsedIter0)
 
       var generationNumber = 0
-      while ( {generationNumber < GeneticAlgorithm_Example.NUM_GENERATIONS} ) {
-        val startIter = System.nanoTime
 
+      var fitnessGeneration = population.getChromosomes.get(0).getFitness
+      var fitnessNextGeneration = 0d
+
+      var generationNotChangeFitness = 0
+      var numberGenerationsWithoutChange = 10
+
+      var conditionStop = true
+
+      while ( (generationNumber < GeneticAlgorithm_Example.NUM_GENERATIONS) && conditionStop) {
         generationNumber += 1
+
+        val startIter = System.nanoTime
 
         population = geneticAlgorithm.evolve(population)
         population.sortChromosomesByFitness()
+
         var resultGeneration = "Generation # " + generationNumber + " => Fittest chromosome: " + population.getChromosomes.get(0).toString
         println(resultGeneration)
 
@@ -121,8 +180,27 @@ object MainTestGA extends Logging{
         //      println(s"Chromosomes of Generaton $generationNumber:")
         //      population.getChromosomes.toArray().foreach(println(_))
 
+        if (generationNumber == 0){
+          fitnessGeneration = population.getChromosomes.get(0).getFitness
+          fitnessNextGeneration = population.getChromosomes.get(0).getFitness
+        }else if (generationNumber > 0){
+          fitnessGeneration = fitnessNextGeneration
+          fitnessNextGeneration = population.getChromosomes.get(0).getFitness
+        }
+
+        if(fitnessGeneration == fitnessNextGeneration){
+          generationNotChangeFitness +=1
+        }else{
+          generationNotChangeFitness = 0
+        }
+
+        if (generationNotChangeFitness == numberGenerationsWithoutChange){
+          conditionStop = false
+        }
+
         val elapsedIter = (System.nanoTime - startIter) / 1e9d
         logInfo(s"Time for iteration $generationNumber: " + elapsedIter)
+
       }
 
       val resultRDD = spark.sparkContext.parallelize(resultGenetic)

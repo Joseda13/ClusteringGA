@@ -1,9 +1,10 @@
 package es.us.ga;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class Population_Clustering {
-
     private List<Chromosome_Clustering> chromosomes;
 
     public Population_Clustering(int length){
@@ -32,5 +33,4 @@ public class Population_Clustering {
 
         chromosomes.sort(byFitness);
     }
-
 }

@@ -233,10 +233,27 @@ public class Chromosome_Clustering {
             }
         }
 
+        if (cont == 0){
+            int index = ThreadLocalRandom.current().nextInt(0, genes.length-1);
+            genes[index] = 1;
+        }
+
+        return this;
+    }
+
+    public Chromosome_Clustering validateInitialChromosome(){
+        int cont = 0;
+
+        for (int x =0; x < genes.length - 1; x++){
+            if (genes[x] == 1){
+                cont++;
+            }
+        }
+
         if (cont == 0 || cont < (0.2 * genes.length)){
             int index = ThreadLocalRandom.current().nextInt(0, genes.length-1);
             genes[index] = 1;
-            validateChromosome();
+            validateInitialChromosome();
         }
 
         return this;
