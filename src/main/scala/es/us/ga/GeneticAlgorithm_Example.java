@@ -18,6 +18,7 @@ public class GeneticAlgorithm_Example {
     public static int DIMENSION = 7;
     private static final int K_MAX = 11;
     public static String PATHTODATA = "";
+    private static final int NV = 20;
 
     public Population_Clustering evolve (Population_Clustering polutaion){
         return mutationPopulation(crossoverPopulation(polutaion));
@@ -157,6 +158,19 @@ public class GeneticAlgorithm_Example {
         return tournamentPopulation;
     }
 
+    public Population_Clustering randomPopulationTestDummies() {
+        List<Chromosome_Clustering> popList = new LinkedList<>();
+
+        for(int x=0; x < POPULATION_SIZE; x++){
+            int k = 5;
+            Chromosome_Clustering newChromosome = new Chromosome_Clustering(DIMENSION,k);
+            newChromosome.setNV(NV);
+            popList.add(newChromosome.inicializeChromosomeWithDummiesRandom(x));
+        }
+
+        return new Population_Clustering(popList);
+    }
+
     public Population_Clustering randomPopulation() {
         List<Chromosome_Clustering> popList = new LinkedList<>();
 
@@ -175,6 +189,23 @@ public class GeneticAlgorithm_Example {
 //        popList.add(auxList.get(4));
 //        popList.add(auxList.get(5));
 //        popList.add(auxList.get(6));
+
+        return new Population_Clustering(popList);
+    }
+
+    public Population_Clustering substitutionPoblation (Population_Clustering oldPopulation){
+        List<Chromosome_Clustering> popList = new LinkedList<>();
+
+        for(int x=0; x < POPULATION_SIZE; x++){
+
+            if (x < (POPULATION_SIZE/2) ){
+                popList.add(oldPopulation.getChromosomes().get(x));
+            }else {
+                int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
+                Chromosome_Clustering newChromosome = new Chromosome_Clustering(DIMENSION,k).inicializeChromosome().validateChromosome();
+                popList.add(newChromosome);
+            }
+        }
 
         return new Population_Clustering(popList);
     }

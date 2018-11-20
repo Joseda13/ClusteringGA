@@ -22,81 +22,16 @@ object MainTestGA extends Logging{
 //    val pathResults = "hdfs://hdfs/jdmartin/Results/Dunn/"
 
 //    val pathDataSets = "data/DataSets/"
-//    val pathResults = "Results/Silhoutte_2/"
+//    val pathResults = "Results/Dunn_Final_SQRT/"
 
     var origen = ""
     var destination = ""
     var dimension = 0
 
     val pathDataSets = "B:\\Genetic_test\\"
-    val pathResults = "B:\\Results\\Silhoutte\\"
+    val pathResults = "B:\\Results\\Silhoutte_Final\\"
 
     val arguments = List(
-//      Array[String](pathDataSets+"K3-N3-D3-DES0_03", pathResults+"K3-N3-D3-DES0_03", "6"),
-//      Array[String](pathDataSets+"K3-N3-D5-DES0_03", pathResults+"K3-N3-D5-DES0_03", "8"),
-//      Array[String](pathDataSets+"K3-N3-D10-DES0_03", pathResults+"K3-N3-D10-DES0_03", "13"),
-      Array[String](pathDataSets+"K3-N3-D15-DES0_03", pathResults+"K3-N3-D15-DES0_03", "18"),
-      Array[String](pathDataSets+"K3-N3-D20-DES0_03", pathResults+"K3-N3-D20-DES0_03", "23"),
-
-//      Array[String](pathDataSets+"K5-N3-D3-DES0_03", pathResults+"K5-N3-D3-DES0_03", "6"),
-//      Array[String](pathDataSets+"K5-N3-D5-DES0_03", pathResults+"K5-N3-D5-DES0_03", "8"),
-//      Array[String](pathDataSets+"K5-N3-D10-DES0_03", pathResults+"K5-N3-D10-DES0_03", "13"),
-      Array[String](pathDataSets+"K5-N3-D15-DES0_03", pathResults+"K5-N3-D15-DES0_03", "18"),
-      Array[String](pathDataSets+"K5-N3-D20-DES0_03", pathResults+"K5-N3-D20-DES0_03", "23"),
-
-//      Array[String](pathDataSets+"K7-N3-D3-DES0_03", pathResults+"K7-N3-D3-DES0_03", "6"),
-//      Array[String](pathDataSets+"K7-N3-D5-DES0_03", pathResults+"K7-N3-D5-DES0_03", "8"),
-//      Array[String](pathDataSets+"K7-N3-D10-DES0_03", pathResults+"K7-N3-D10-DES0_03", "13"),
-      Array[String](pathDataSets+"K7-N3-D15-DES0_03", pathResults+"K7-N3-D15-DES0_03", "18"),
-      Array[String](pathDataSets+"K7-N3-D20-DES0_03", pathResults+"K7-N3-D20-DES0_03", "23"),
-
-//      Array[String](pathDataSets+"K3-N5-D3-DES0_03", pathResults+"K3-N5-D3-DES0_03", "8"),
-//      Array[String](pathDataSets+"K3-N5-D5-DES0_03", pathResults+"K3-N5-D5-DES0_03", "10"),
-//      Array[String](pathDataSets+"K3-N5-D10-DES0_03", pathResults+"K3-N5-D10-DES0_03", "15"),
-//      Array[String](pathDataSets+"K3-N5-D15-DES0_03", pathResults+"K3-N5-D15-DES0_03", "20"),
-      Array[String](pathDataSets+"K3-N5-D20-DES0_03", pathResults+"K3-N5-D20-DES0_03", "25"),
-
-//      Array[String](pathDataSets+"K5-N5-D3-DES0_03", pathResults+"K5-N5-D3-DES0_03", "8"),
-//      Array[String](pathDataSets+"K5-N5-D5-DES0_03", pathResults+"K5-N5-D5-DES0_03", "10"),
-//      Array[String](pathDataSets+"K5-N5-D10-DES0_03", pathResults+"K5-N5-D10-DES0_03", "15"),
-//      Array[String](pathDataSets+"K5-N5-D15-DES0_03", pathResults+"K5-N5-D15-DES0_03", "20"),
-      Array[String](pathDataSets+"K5-N5-D20-DES0_03", pathResults+"K5-N5-D20-DES0_03", "25"),
-
-//      Array[String](pathDataSets+"K7-N5-D3-DES0_03", pathResults+"K7-N5-D3-DES0_03", "8"),
-//      Array[String](pathDataSets+"K7-N5-D5-DES0_03", pathResults+"K7-N5-D5-DES0_03", "10"),
-//      Array[String](pathDataSets+"K7-N5-D10-DES0_03", pathResults+"K7-N5-D10-DES0_03", "15"),
-      Array[String](pathDataSets+"K7-N5-D15-DES0_03", pathResults+"K7-N5-D15-DES0_03", "20"),
-      Array[String](pathDataSets+"K7-N5-D20-DES0_03", pathResults+"K7-N5-D20-DES0_03", "25"),
-
-//      Array[String](pathDataSets+"K3-N10-D3-DES0_03", pathResults+"K3-N10-D3-DES0_03", "13"),
-//      Array[String](pathDataSets+"K3-N10-D5-DES0_03", pathResults+"K3-N10-D5-DES0_03", "15"),
-//      Array[String](pathDataSets+"K3-N10-D10-DES0_03", pathResults+"K3-N10-D10-DES0_03", "20"),
-//      Array[String](pathDataSets+"K3-N10-D15-DES0_03", pathResults+"K3-N10-D15-DES0_03", "25"),
-//      Array[String](pathDataSets+"K3-N10-D20-DES0_03", pathResults+"K3-N10-D20-DES0_03", "30"),
-
-//      Array[String](pathDataSets+"K5-N10-D3-DES0_03", pathResults+"K5-N10-D3-DES0_03", "13"),
-//      Array[String](pathDataSets+"K5-N10-D5-DES0_03", pathResults+"K5-N10-D5-DES0_03", "15"),
-//      Array[String](pathDataSets+"K5-N10-D10-DES0_03", pathResults+"K5-N10-D10-DES0_03", "20"),
-      Array[String](pathDataSets+"K5-N10-D15-DES0_03", pathResults+"K5-N10-D15-DES0_03", "25"),
-//      Array[String](pathDataSets+"K5-N10-D20-DES0_03", pathResults+"K5-N10-D20-DES0_03", "30"),
-
-//      Array[String](pathDataSets+"K7-N10-D3-DES0_03", pathResults+"K7-N10-D3-DES0_03", "13"),
-//      Array[String](pathDataSets+"K7-N10-D5-DES0_03", pathResults+"K7-N10-D5-DES0_03", "15"),
-//      Array[String](pathDataSets+"K7-N10-D10-DES0_03", pathResults+"K7-N10-D10-DES0_03", "20"),
-//      Array[String](pathDataSets+"K7-N10-D15-DES0_03", pathResults+"K7-N10-D15-DES0_03", "25"),
-      Array[String](pathDataSets+"K7-N10-D20-DES0_03", pathResults+"K7-N10-D20-DES0_03", "30"),
-
-//      Array[String](pathDataSets+"K3-N15-D3-DES0_03", pathResults+"K3-N15-D3-DES0_03", "18"),
-      Array[String](pathDataSets+"K3-N15-D5-DES0_03", pathResults+"K3-N15-D5-DES0_03", "20"),
-      Array[String](pathDataSets+"K3-N15-D10-DES0_03", pathResults+"K3-N15-D10-DES0_03", "25"),
-      Array[String](pathDataSets+"K3-N15-D15-DES0_03", pathResults+"K3-N15-D15-DES0_03", "30"),
-      Array[String](pathDataSets+"K3-N15-D20-DES0_03", pathResults+"K3-N15-D20-DES0_03", "35"),
-
-//      Array[String](pathDataSets+"K5-N15-D3-DES0_03", pathResults+"K5-N15-D3-DES0_03", "18"),
-      Array[String](pathDataSets+"K5-N15-D5-DES0_03", pathResults+"K5-N15-D5-DES0_03", "20"),
-      Array[String](pathDataSets+"K5-N15-D10-DES0_03", pathResults+"K5-N15-D10-DES0_03", "25"),
-      Array[String](pathDataSets+"K5-N15-D15-DES0_03", pathResults+"K5-N15-D15-DES0_03", "30"),
-      Array[String](pathDataSets+"K5-N15-D20-DES0_03", pathResults+"K5-N15-D20-DES0_03", "35"),
 
       Array[String](pathDataSets+"K3-N20-D3-DES0_03", pathResults+"K3-N20-D3-DES0_03", "23"),
       Array[String](pathDataSets+"K3-N20-D5-DES0_03", pathResults+"K3-N20-D5-DES0_03", "25"),
@@ -108,7 +43,73 @@ object MainTestGA extends Logging{
       Array[String](pathDataSets+"K5-N20-D5-DES0_03", pathResults+"K5-N20-D5-DES0_03", "25"),
       Array[String](pathDataSets+"K5-N20-D10-DES0_03", pathResults+"K5-N20-D10-DES0_03", "30"),
       Array[String](pathDataSets+"K5-N20-D15-DES0_03", pathResults+"K5-N20-D15-DES0_03", "35"),
-      Array[String](pathDataSets+"K5-N20-D20-DES0_03", pathResults+"K5-N20-D20-DES0_03", "40")
+      Array[String](pathDataSets+"K5-N20-D20-DES0_03", pathResults+"K5-N20-D20-DES0_03", "40"),
+
+      Array[String](pathDataSets+"K3-N3-D3-DES0_03", pathResults+"K3-N3-D3-DES0_03", "6"),
+      Array[String](pathDataSets+"K3-N3-D5-DES0_03", pathResults+"K3-N3-D5-DES0_03", "8"),
+      Array[String](pathDataSets+"K3-N3-D10-DES0_03", pathResults+"K3-N3-D10-DES0_03", "13"),
+      Array[String](pathDataSets+"K3-N3-D15-DES0_03", pathResults+"K3-N3-D15-DES0_03", "18"),
+      Array[String](pathDataSets+"K3-N3-D20-DES0_03", pathResults+"K3-N3-D20-DES0_03", "23"),
+
+      Array[String](pathDataSets+"K5-N3-D3-DES0_03", pathResults+"K5-N3-D3-DES0_03", "6"),
+      Array[String](pathDataSets+"K5-N3-D5-DES0_03", pathResults+"K5-N3-D5-DES0_03", "8"),
+      Array[String](pathDataSets+"K5-N3-D10-DES0_03", pathResults+"K5-N3-D10-DES0_03", "13"),
+      Array[String](pathDataSets+"K5-N3-D15-DES0_03", pathResults+"K5-N3-D15-DES0_03", "18"),
+      Array[String](pathDataSets+"K5-N3-D20-DES0_03", pathResults+"K5-N3-D20-DES0_03", "23"),
+
+      Array[String](pathDataSets+"K7-N3-D3-DES0_03", pathResults+"K7-N3-D3-DES0_03", "6"),
+      Array[String](pathDataSets+"K7-N3-D5-DES0_03", pathResults+"K7-N3-D5-DES0_03", "8"),
+      Array[String](pathDataSets+"K7-N3-D10-DES0_03", pathResults+"K7-N3-D10-DES0_03", "13"),
+      Array[String](pathDataSets+"K7-N3-D15-DES0_03", pathResults+"K7-N3-D15-DES0_03", "18"),
+      Array[String](pathDataSets+"K7-N3-D20-DES0_03", pathResults+"K7-N3-D20-DES0_03", "23"),
+
+      Array[String](pathDataSets+"K3-N5-D3-DES0_03", pathResults+"K3-N5-D3-DES0_03", "8"),
+      Array[String](pathDataSets+"K3-N5-D5-DES0_03", pathResults+"K3-N5-D5-DES0_03", "10"),
+      Array[String](pathDataSets+"K3-N5-D10-DES0_03", pathResults+"K3-N5-D10-DES0_03", "15"),
+      Array[String](pathDataSets+"K3-N5-D15-DES0_03", pathResults+"K3-N5-D15-DES0_03", "20"),
+      Array[String](pathDataSets+"K3-N5-D20-DES0_03", pathResults+"K3-N5-D20-DES0_03", "25"),
+
+      Array[String](pathDataSets+"K5-N5-D3-DES0_03", pathResults+"K5-N5-D3-DES0_03", "8"),
+      Array[String](pathDataSets+"K5-N5-D5-DES0_03", pathResults+"K5-N5-D5-DES0_03", "10"),
+      Array[String](pathDataSets+"K5-N5-D10-DES0_03", pathResults+"K5-N5-D10-DES0_03", "15"),
+      Array[String](pathDataSets+"K5-N5-D15-DES0_03", pathResults+"K5-N5-D15-DES0_03", "20"),
+      Array[String](pathDataSets+"K5-N5-D20-DES0_03", pathResults+"K5-N5-D20-DES0_03", "25"),
+
+      Array[String](pathDataSets+"K7-N5-D3-DES0_03", pathResults+"K7-N5-D3-DES0_03", "8"),
+      Array[String](pathDataSets+"K7-N5-D5-DES0_03", pathResults+"K7-N5-D5-DES0_03", "10"),
+      Array[String](pathDataSets+"K7-N5-D10-DES0_03", pathResults+"K7-N5-D10-DES0_03", "15"),
+      Array[String](pathDataSets+"K7-N5-D15-DES0_03", pathResults+"K7-N5-D15-DES0_03", "20"),
+      Array[String](pathDataSets+"K7-N5-D20-DES0_03", pathResults+"K7-N5-D20-DES0_03", "25"),
+
+      Array[String](pathDataSets+"K3-N10-D3-DES0_03", pathResults+"K3-N10-D3-DES0_03", "13"),
+      Array[String](pathDataSets+"K3-N10-D5-DES0_03", pathResults+"K3-N10-D5-DES0_03", "15"),
+      Array[String](pathDataSets+"K3-N10-D10-DES0_03", pathResults+"K3-N10-D10-DES0_03", "20"),
+      Array[String](pathDataSets+"K3-N10-D15-DES0_03", pathResults+"K3-N10-D15-DES0_03", "25"),
+      Array[String](pathDataSets+"K3-N10-D20-DES0_03", pathResults+"K3-N10-D20-DES0_03", "30"),
+
+      Array[String](pathDataSets+"K5-N10-D3-DES0_03", pathResults+"K5-N10-D3-DES0_03", "13"),
+      Array[String](pathDataSets+"K5-N10-D5-DES0_03", pathResults+"K5-N10-D5-DES0_03", "15"),
+      Array[String](pathDataSets+"K5-N10-D10-DES0_03", pathResults+"K5-N10-D10-DES0_03", "20"),
+      Array[String](pathDataSets+"K5-N10-D15-DES0_03", pathResults+"K5-N10-D15-DES0_03", "25"),
+      Array[String](pathDataSets+"K5-N10-D20-DES0_03", pathResults+"K5-N10-D20-DES0_03", "30"),
+
+      Array[String](pathDataSets+"K7-N10-D3-DES0_03", pathResults+"K7-N10-D3-DES0_03", "13"),
+      Array[String](pathDataSets+"K7-N10-D5-DES0_03", pathResults+"K7-N10-D5-DES0_03", "15"),
+      Array[String](pathDataSets+"K7-N10-D10-DES0_03", pathResults+"K7-N10-D10-DES0_03", "20"),
+      Array[String](pathDataSets+"K7-N10-D15-DES0_03", pathResults+"K7-N10-D15-DES0_03", "25"),
+      Array[String](pathDataSets+"K7-N10-D20-DES0_03", pathResults+"K7-N10-D20-DES0_03", "30"),
+
+      Array[String](pathDataSets+"K3-N15-D3-DES0_03", pathResults+"K3-N15-D3-DES0_03", "18"),
+      Array[String](pathDataSets+"K3-N15-D5-DES0_03", pathResults+"K3-N15-D5-DES0_03", "20"),
+      Array[String](pathDataSets+"K3-N15-D10-DES0_03", pathResults+"K3-N15-D10-DES0_03", "25"),
+      Array[String](pathDataSets+"K3-N15-D15-DES0_03", pathResults+"K3-N15-D15-DES0_03", "30"),
+      Array[String](pathDataSets+"K3-N15-D20-DES0_03", pathResults+"K3-N15-D20-DES0_03", "35"),
+
+      Array[String](pathDataSets+"K5-N15-D3-DES0_03", pathResults+"K5-N15-D3-DES0_03", "18"),
+      Array[String](pathDataSets+"K5-N15-D5-DES0_03", pathResults+"K5-N15-D5-DES0_03", "20"),
+      Array[String](pathDataSets+"K5-N15-D10-DES0_03", pathResults+"K5-N15-D10-DES0_03", "25"),
+      Array[String](pathDataSets+"K5-N15-D15-DES0_03", pathResults+"K5-N15-D15-DES0_03", "30"),
+      Array[String](pathDataSets+"K5-N15-D20-DES0_03", pathResults+"K5-N15-D20-DES0_03", "35")
     )
 
     for (data <- arguments){
@@ -164,6 +165,7 @@ object MainTestGA extends Logging{
       var numberGenerationsWithoutChange = 10
 
       var conditionStop = true
+      var enabledSubstitution = true
 
       while ( (generationNumber < GeneticAlgorithm_Example.NUM_GENERATIONS) && conditionStop) {
         generationNumber += 1
@@ -195,7 +197,15 @@ object MainTestGA extends Logging{
         }
 
         if (generationNotChangeFitness == numberGenerationsWithoutChange){
-          conditionStop = false
+
+          if (!enabledSubstitution){
+            conditionStop = false
+          }else {
+            population = geneticAlgorithm.substitutionPoblation(new Population_Clustering(population.getChromosomes.subList(0, (GeneticAlgorithm_Example.POPULATION_SIZE / 2))))
+          }
+
+          enabledSubstitution = false
+          generationNotChangeFitness = 0
         }
 
         val elapsedIter = (System.nanoTime - startIter) / 1e9d

@@ -7,8 +7,8 @@ import java.util.concurrent.ThreadLocalRandom;
 public class GeneticAlgorithm_Multi {
 
     // parameters for the GA
-    public static final int POPULATION_SIZE = 5;
-    public static final int NUM_GENERATIONS = 2;
+    public static final int POPULATION_SIZE = 200;
+    public static final int NUM_GENERATIONS = 100;
     public static final double MUTATION_RATE = 0.1;
     public static final double MUTATION_WEIGHTS = 0.7;
     public static final double MUTATION_K = 0.3;
@@ -163,6 +163,23 @@ public class GeneticAlgorithm_Multi {
             int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
             Chromosome_Multi newChromosome = new Chromosome_Multi(DIMENSION,k).inicializeChromosome().validateInitialChromosome();
             popList.add(newChromosome);
+        }
+
+        return new Population_Multi(popList);
+    }
+
+    public Population_Multi substitutionPoblation (Population_Multi oldPopulation){
+        List<Chromosome_Multi> popList = new LinkedList<>();
+
+        for(int x=0; x < POPULATION_SIZE; x++){
+
+            if (x < (POPULATION_SIZE/2) ){
+                popList.add(oldPopulation.getChromosomes().get(x));
+            }else {
+                int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
+                Chromosome_Multi newChromosome = new Chromosome_Multi(DIMENSION,k).inicializeChromosome().validateChromosome();
+                popList.add(newChromosome);
+            }
         }
 
         return new Population_Multi(popList);

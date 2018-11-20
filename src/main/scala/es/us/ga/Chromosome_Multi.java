@@ -8,14 +8,14 @@ import java.util.concurrent.ThreadLocalRandom;
 public class Chromosome_Multi {
 
     private boolean isFitnessChanged = true;
-    private boolean isDunnCalculated = false;
-    private boolean isSilhoutteCalculated = false;
-    private boolean isCorrectionCalculated = false;
+    private boolean isDunnCalculated;
+    private boolean isSilhoutteCalculated;
+    private boolean isCorrectionCalculated;
 
     private double dunnValue = 0d;
     private double silhoutteValue = 0d;
     private double dimensionCorrection = 0d;
-    private int numberDominations = 0;
+    private double numberDominations = 0d;
     private double maxEuclideanDistance = 0d;
     private double fitness = 0d;
 
@@ -26,6 +26,9 @@ public class Chromosome_Multi {
         genes = new int[dimension+1];
         K = K_max;
         genes[dimension] = K;
+        isDunnCalculated = false;
+        isSilhoutteCalculated = false;
+        isCorrectionCalculated = false;
     }
 
     public int contAttributesAll(){
@@ -97,7 +100,9 @@ public class Chromosome_Multi {
 
     public void setDunnValue(){
         if (!isDunnCalculated){
-            dunnValue = Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Multi.PATHTODATA);
+//            dunnValue = Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Multi.PATHTODATA) + (0.1*(1.0 - (1.0 / contAttributesAll())));
+            dunnValue = Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Multi.PATHTODATA) + (Math.sqrt(contAttributesAll()));
+//            dunnValue = Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Multi.PATHTODATA);
             isDunnCalculated = true;
         }
     }
@@ -108,7 +113,8 @@ public class Chromosome_Multi {
 
     public void setSilhoutteValue(){
         if(!isSilhoutteCalculated){
-            silhoutteValue = Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Multi.PATHTODATA);
+            silhoutteValue = Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Multi.PATHTODATA) + (0.5*(1.0 - (1.0 / contAttributesAll()) ));
+//            silhoutteValue = Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Multi.PATHTODATA);
             isSilhoutteCalculated = true;
         }
     }
@@ -119,7 +125,8 @@ public class Chromosome_Multi {
 
     public void setDimensionCorrection(){
         if(!isCorrectionCalculated){
-            dimensionCorrection = Math.sqrt(contAttributesAll());
+            dimensionCorrection = 0.1*(1.0 - (1.0 / contAttributesAll()) );
+//            dimensionCorrection = Math.sqrt(contAttributesAll());
             isCorrectionCalculated = true;
         }
     }
@@ -127,10 +134,10 @@ public class Chromosome_Multi {
     public void updateObjetives(){
         setDunnValue();
         setSilhoutteValue();
-        setDimensionCorrection();
+//        setDimensionCorrection();
     }
 
-    public void setNumberDominations(int numberDom){
+    public void setNumberDominations(double numberDom){
         numberDominations = numberDom;
     }
 
@@ -139,15 +146,16 @@ public class Chromosome_Multi {
     }
 
     public double getFitness(){
-        if (isFitnessChanged){
-            fitness = recalculatedFitness();
-            isFitnessChanged = false;
-        }
-        return fitness;
+//        if (isFitnessChanged){
+//            fitness = recalculatedFitness();
+//            isFitnessChanged = false;
+//        }
+//        return fitness;
+        return (numberDominations*1.0) + maxEuclideanDistance;
     }
 
     public double recalculatedFitness(){
-        return numberDominations + maxEuclideanDistance;
+        return (numberDominations*1.0) + maxEuclideanDistance;
     }
 
     public String toString(){

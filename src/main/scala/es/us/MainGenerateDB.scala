@@ -24,8 +24,8 @@ object MainGenerateDB {
 
     val sc = new SparkContext(conf)
 
-    var features = 3   //Number of features (columns)
-    var dummies = 20
+    var features = 15   //Number of features (columns)
+    var dummies = 0
     var tags = 5
     var K = 7       //Number of clusters
     var minimumPoints = 500    //Instances minimum per cluster
@@ -226,23 +226,24 @@ object MainGenerateDB {
 
     import spark.implicits._
 
-//    var data = spark.read
-//      .option("header", "false")
-//      .option("inferSchema", "true")
-//      .option("delimiter", ",")
-//      .csv(s"B:\\N_10.txt").distinct()
+    var data = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .option("delimiter", ",")
+      .csv(s"B:\\Pruebas_Generator\\Generador_DB\\N=15.txt").distinct()
 
 //    println("Hay diferentes: " + data.count())
-//    val aux0 = data.map{row =>
-//      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8)
-//        , row.getInt(9)
-//        , row.getInt(10), row.getInt(11), row.getInt(12), row.getInt(13), row.getInt(14), row.getInt(15), row.getInt(16), row.getInt(17)
+    val aux0 = data.map{row =>
+      Array(row.getInt(0), row.getInt(1), row.getInt(2), row.getInt(3), row.getInt(4), row.getInt(5), row.getInt(6), row.getInt(7), row.getInt(8)
+        , row.getInt(9)
+        , row.getInt(10), row.getInt(11), row.getInt(12), row.getInt(13), row.getInt(14)
+//        row.getInt(15), row.getInt(16), row.getInt(17)
 //      ,row.getInt(18), row.getInt(19))
-//      )
-//    }.collect()
+      )
+    }.collect()
 
     //Create all permutations between the tags into the number of features
-    val aux = Array.fill(features)(0 to tags-1).flatten.combinations(features).flatMap(_.permutations).toArray
+//    val aux = Array.fill(features)(0 to tags-1).flatten.combinations(features).flatMap(_.permutations).toArray
 //    val aux = Array.fill(2)(0 to tags-1).flatten.combinations(2).flatMap(_.permutations).toArray
 
 //    val auxTotal = aux.map{row =>
@@ -255,7 +256,7 @@ object MainGenerateDB {
 //      .replace("WrappedArray(", "").replace(")", "").replace(" ", ""))
 //      .coalesce(1, shuffle = true)
 //      .saveAsTextFile(s"V$features-T$tags" + Utils.whatTimeIsIt())
-    val prueba = Random.shuffle(aux.toSeq)
+    val prueba = Random.shuffle(aux0.toSeq)
 
 //    val index = ThreadLocalRandom.current.nextInt(0, prueba.length - 1)
 //    val elementoRandom = prueba.apply(index)
@@ -302,10 +303,10 @@ object MainGenerateDB {
 
     println(s"Different valid combinations number with $tags tags and $features features: " + (indexResult) )
 
-    result = Random.shuffle(resultTotal.take(indexResult).toSeq).toArray.take(number_cluster)
+//    result = Random.shuffle(resultTotal.take(indexResult).toSeq).toArray.take(number_cluster)
 //    val testResultTotal = spark.sparkContext.parallelize(resultTotal).toDF()
 //    testResultTotal.show(30)
-//    result = Random.shuffle(aux0.take(7).toSeq).toArray.take(number_cluster)
+    result = Random.shuffle(aux0.take(7).toSeq).toArray.take(number_cluster)
 
     val testResult = spark.sparkContext.parallelize(result).toDF()
     println("Combinations choosen:")

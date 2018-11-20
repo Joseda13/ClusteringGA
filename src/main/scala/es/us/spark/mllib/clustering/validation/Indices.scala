@@ -1,5 +1,7 @@
 package es.us.spark.mllib.clustering.validation
 
+import java.util.concurrent.ThreadLocalRandom
+
 import breeze.linalg.min
 import es.us.ga.Chromosome_Clustering
 import es.us.spark.mllib.Utils
@@ -11,6 +13,110 @@ import org.apache.spark.sql.SparkSession
 
 object Indices {
 
+  def getFitnessDB(features: Array[Int], pathToData: String) : Double = {
+
+    val K = features(features.length-1)
+    val spark = SparkSession.builder()
+      .appName(s"VariablesIndices-$K")
+      .master("local[*]")
+      .getOrCreate()
+
+    import spark.implicits._
+
+    val sc = spark.sparkContext
+
+    val delimiter = ","
+    val idIndex = -1
+    val classIndex = 0
+
+    //Load data
+    var dataRead = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .option("delimiter", delimiter)
+      .csv(pathToData)
+      .cache()
+
+    var dataFeatures = dataRead.drop(s"_c$classIndex")
+
+    //If the gen to the chromosome if == 0, then delete its column to the DataSet
+    for (i <- 0 to features.length - 2){
+      if (features(i) == 0){
+        val index = i + 1
+        dataFeatures = dataFeatures.drop(s"_c$index")
+      }
+    }
+
+    //Save all columns less the class column
+    val columnsDataSet = dataFeatures.columns
+
+    val parsedData = dataRead.rdd.map { r =>
+
+      //Create a Array[Double] with the values of each column to the DataSet read
+      val vectorValues = for (co <- columnsDataSet) yield{
+
+        //If the column number have two digits
+        if(co.length == 4) {
+          r.getDouble(co.takeRight(2).toInt)
+        }
+        //If the column number have one digit
+        else {
+          r.getDouble(co.takeRight(1).toInt)
+        }
+      }
+
+      //Create a Vector with the Array[Vector] of each row in the DataSet read
+      val auxVector = Vectors.dense(vectorValues)
+
+      //Return the Cluster ID and the Vector for each row in the DataSet read
+      (auxVector)
+    }
+
+    //Create the clusters using the K-Means algorithm to Spark
+    val clusters = new KMeans()
+      .setK(K)
+      .setMaxIterations(100)
+      .setSeed(K)
+      .run(parsedData)
+
+    //Global Center
+    val centroids = sc.parallelize(clusters.clusterCenters)
+    val centroidsCartesian = centroids.cartesian(centroids).filter(x => x._1 != x._2).cache()
+
+    val intraMean = clusters.computeCost(parsedData) / parsedData.count()
+    val interMeanAux = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).reduce(_ + _)
+    val interMean = interMeanAux / centroidsCartesian.count()
+
+    //DAVIES-BOULDIN
+    val avgCentroid = parsedData.map { x =>
+      //Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
+      (clusters.predict(x), x)
+    }.map(x => (x._1, (Vectors.sqdist(x._2, clusters.clusterCenters(x._1)))))
+      .mapValues(x => (x, 1))
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
+      .mapValues(y => 1.0 * y._1 / y._2)
+      .collectAsMap()
+
+    val bcAvgCentroid = sc.broadcast(avgCentroid)
+
+    val centroidesWithId = centroids.zipWithIndex()
+      .map(_.swap).cache()
+
+    val cartesianCentroides = centroidesWithId.cartesian(centroidesWithId).filter(x => x._1._1 != x._2._1)
+
+    val davis = cartesianCentroides.map { case (x, y) => (x._1.toInt, (bcAvgCentroid.value(x._1.toInt) + bcAvgCentroid.value(y._1.toInt)) / Vectors.sqdist(x._2, y._2)) }
+      .groupByKey()
+      .map(_._2.max)
+      .reduce(_ + _)
+
+    val bouldin = davis / features(features.length-1)
+
+    spark.stop()
+
+    bouldin
+  }
+
+
   /**
     * Calculate the Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices.
     *
@@ -19,7 +125,8 @@ object Indices {
     * @return Return Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices.
     * @example getInternalIndices(features, pathToData)
     */
-  def getInternalIndices(features: Array[Int], pathToData: String) :(Double, Double, Double, Double) = {
+  //(Double, Double, Double, Double)
+  def getInternalIndices(features: Array[Int], pathToData: String) : (Double, Double, Double, Double) = {
     val i = 1
     var s = ""
 //    val K = features(features.length-1)
@@ -112,11 +219,11 @@ object Indices {
 
         //If the column number have two digits
         if(co.length == 4) {
-          r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+          r.getDouble(co.takeRight(2).toInt)
         }
         //If the column number have one digit
         else {
-          r.getDouble(co.charAt(2).toInt - 48)
+          r.getDouble(co.takeRight(1).toInt)
         }
       }
 
@@ -760,11 +867,11 @@ object Indices {
 
         //If the column number have two digits
         if(co.length == 4) {
-          r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+          r.getDouble(co.takeRight(2).toInt)
         }
         //If the column number have one digit
         else {
-          r.getDouble(co.charAt(2).toInt - 48)
+          r.getDouble(co.takeRight(1).toInt)
         }
       }
 
@@ -913,11 +1020,11 @@ object Indices {
 
         //If the column number have two digits
         if(co.length == 4) {
-          r.getDouble((co.charAt(2).toInt + co.charAt(3).toInt) - 87)
+          r.getDouble(co.takeRight(2).toInt)
         }
         //If the column number have one digit
         else {
-          r.getDouble(co.charAt(2).toInt - 48)
+          r.getDouble(co.takeRight(1).toInt)
         }
       }
 
@@ -931,7 +1038,21 @@ object Indices {
 //    val clusters = KMeans.train(parsedData, K, 100)
     val clusters = new KMeans().setK(K).setMaxIterations(100).setSeed(K).run(parsedData)
 
+//    val rddToKnime = parsedData.map(v => (clusters.predict(v), v))
+//    rddToKnime.map(x => x._1 + "," + x._2.toString.replace("[", "").replace("]", "").replace(" ",""))
+//      .coalesce(1, shuffle = true)
+//      .saveAsTextFile(s"testSilhoutte-${Utils.whatTimeIsIt()}")
+
     val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
+//    val data = parsedData.map{
+//      v =>
+//        val cluster = ThreadLocalRandom.current().nextInt(0, 3)
+//          (cluster, v)
+//    }.groupByKey().collect()
+
+
+//    val weightsForDistances = Array.fill(35){0}
+//    weightsForDistances.update(32, 1)
 
     //Set up the global variables
     var b = 0.0
@@ -967,6 +1088,7 @@ object Indices {
           for (j <- points_M.filter(_._1 == m).flatMap(_._2)){
             //Add the distance between the i point and j point
             b_i_j += Vectors.sqdist(i,j)
+//            b_i_j += calculateDist(i,j,weightsForDistances)
           }
 
           //Calculate the average distance between the i point and the cluster M
@@ -987,6 +1109,7 @@ object Indices {
         for (p <- points_K.flatMap(_._2) if p != i){
           //Add the distance between the i point and the p point
           a_i_p += Vectors.sqdist(i,p)
+//          a_i_p += calculateDist(i, p, weightsForDistances)
         }
 
         //Calculate the average distance between the i point and the rest of point in the cluster K
@@ -1004,6 +1127,16 @@ object Indices {
     silhouette = silhouette / data.map(_._2.size).sum
 
     (silhouette)
+  }
+
+  def calculateDist (v1: Vector, v2: Vector, weights: Array[Int]): Double = {
+    var result = 0d
+
+    for (index <- 0 until weights.length){
+      result += weights.apply(index) * Math.pow( (v1.apply(index) - v2.apply(index)), 2)
+    }
+
+    result
   }
 
   /**
