@@ -23,24 +23,19 @@ object MainConfusionMatrix {
       .master("local[*]")
       .getOrCreate()
 
-    import spark.implicits._
-
-    var origen = "B:\\DataSets_Genetics\\C7-V5-D2-I(500-1000)"
-    var K = 7
-    var dimension = 7
+    var origen = "B:\\DataSets_Real\\g2-512-30.txt"
+    var origenTest = "B:\\DataSets_Real\\g2-512-30-gt.pa"
+    var chromo_Result = "[1,1,1,1,1,1,1,0,1,1,1,1,0,0,1,1,1,0,1,1,1,1,1,0,1,0,1,0,0,1,1,1,0,1,1,1,1,1,1,1,1,1,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,0,1,1,0,1,1,1,0,0,1,0,0,1,1,0,1,1,1,1,1,0,1,0,1,0,0,1,0,0,1,1,1,0,1,0,1,1,0,0,1,0,1,0,0,0,0,1,0,1,1,1,0,1,1,0,0,0,0,1,0,0,1,1,0,0,0,1,0,0,1,1,1,1,0,0,0,1,0,0,1,1,1,1,1,0,1,1,0,0,1,1,1,1,1,1,0,0,0,0,1,0,0,1,1,0,0,0,0,0,1,0,1,1,1,0,0,0,1,0,1,1,1,1,1,0,0,1,0,1,1,0,0,1,1,0,0,0,0,1,1,1,0,1,1,0,1,1,0,0,1,1,0,1,0,0,0,1,0,1,1,1,1,0,0,0,1,1,1,0,1,1,1,1,1,0,1,0,0,1,1,0,1,1,0,0,1,1,0,1,1,0,0,1,1,0,1,1,0,1,1,0,1,1,1,0,0,1,0,1,1,1,1,1,0,0,1,0,0,1,1,1,0,1,0,0,1,1,0,0,1,1,1,1,1,0,0,0,0,0,1,1,1,0,1,0,0,1,0,1,0,0,1,1,1,1,0,0,0,1,0,0,1,0,1,1,0,1,0,0,1,1,1,1,1,0,0,0,0,0,1,1,0,1,1,0,0,1,0,1,1,0,1,1,0,0,1,1,0,0,1,1,0,0,0,1,0,0,0,0,1,0,1,1,1,0,1,0,0,1,0,0,1,1,1,1,0,1,0,1,1,0,1,1,0,0,1,0,0,1,1,0,1,1,0,0,0,1,1,1,1,1,0,1,0,0,0,1,0,0,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,0,0,0,1,1,1,1,0,1,0,0,0,1,0,1,1,1,0,1,0,0,1,1,1,1,1,1,0,1,0,0,0,0,0,0,1,1,0,0,1,0,0,1,0,0,2]"
+    var K = 2
+    var dimension = 512
     var idIndex = -1
-    var classIndex = 0
+    var classIndex = -1
     var delimiter = ","
-    var destination = "B:\\"
+    var destination = "B:\\Results\\Confusion_Matrix_Real_DB\\g2-512-30.txt"
 
-    val chromosome = new Chromosome_Clustering(dimension, 7)
-    chromosome.getGenes().update(0,1)
-    chromosome.getGenes().update(1,1)
-    chromosome.getGenes().update(2,1)
-    chromosome.getGenes().update(3,1)
-    chromosome.getGenes().update(4,1)
-    chromosome.getGenes().update(5,0)
-    chromosome.getGenes().update(6,0)
+    val chromosome = Chromosome_Clustering.create_Chromosome_Clustering_From_String(chromo_Result)
+    chromosome.setNV(dimension)
+    println("Chromosome Result: " + chromosome.toSpecialString + ", number of features: " + chromosome.contAttributeGood())
 
     val dataRead = spark.read
       .option("header", "false")
@@ -48,20 +43,31 @@ object MainConfusionMatrix {
       .option("delimiter", delimiter)
       .csv(origen)
 
-//    dataRead.printSchema()
+    val dataReadTest = spark.read
+      .option("header", "false")
+      .option("inferSchema", "true")
+      .option("delimiter", delimiter)
+      .csv(origenTest)
 
-    //Si el fichero tiene indice, se le dropea, si no símplemente cambiamos el nombre a la columna
-    var data = if (idIndex != -1) {
-      dataRead.drop(s"_c$idIndex")
-        .withColumnRenamed(dataRead.columns(classIndex), "class")
-    } else {
-      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
-    }
+    val dataIndex = dataRead.withColumn("id",monotonically_increasing_id())
+
+    val dataC = dataReadTest.withColumn("id_2",monotonically_increasing_id()).withColumnRenamed("_c0","class")
+
+    var data = dataC.crossJoin(dataIndex).filter(r => r.getLong(1) == r.getLong(dimension+2)).drop("id").drop("id_2")
+//    data.show(10)
+    //Si el fichero tiene indice, es eliminado, si no simplemente cambiamos el nombre a la columna
+//    var data = if (idIndex != -1) {
+//      dataRead.drop(s"_c$idIndex")
+//        .withColumnRenamed(dataRead.columns(classIndex), "class")
+//    } else {
+//      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
+//    }
 
     //If the gen to the chromosome if == 0, then delete its column to the DataSet
     for (i <- 0 to chromosome.getGenes.length - 2){
       if (chromosome.getGenes.apply(i) == 0){
-        val index = i + 1
+//        val index = i + 1
+        val index = i
         data = data.drop(s"_c$index")
       }
     }

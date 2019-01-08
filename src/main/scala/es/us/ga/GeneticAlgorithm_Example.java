@@ -1,12 +1,16 @@
 package es.us.ga;
 
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+
+import javax.xml.crypto.Data;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithm_Example {
 
-    // parameters for the GA
+    //Configuration for the GA
     public static final int POPULATION_SIZE = 200;
     public static final int NUM_GENERATIONS = 100;
     public static final double MUTATION_RATE = 0.1;
@@ -16,9 +20,10 @@ public class GeneticAlgorithm_Example {
     public static final int NUM_ELIT_CHROMOSOMES = 2;
     public static final int TOURNAMENT_SIZE = 2;
     public static int DIMENSION = 7;
-    private static final int K_MAX = 11;
+    private static final int K_MAX = 19;
     public static String PATHTODATA = "";
     private static final int NV = 20;
+    public static Dataset<Row> DATABASE;
 
     public Population_Clustering evolve (Population_Clustering polutaion){
         return mutationPopulation(crossoverPopulation(polutaion));
@@ -49,12 +54,12 @@ public class GeneticAlgorithm_Example {
 
         for (int x=NUM_ELIT_CHROMOSOMES; x < population.getChromosomes().size(); x++){
             if (Math.random() < MUTATION_RATE){
-                //Mutar el gen entero
+                //Mutate all genes
                 mutatePopulation.getChromosomes().add(x, mutateChromosome(population.getChromosomes().get(x)));
-                //Mutar solo una variable
-//                mutatePopulation.getChromosomes().add(x, mutateChromosomeOnlyOneGen(population.getChromosomes().get(x)));
-                //Mutar solo una variable y K
-//                mutatePopulation.getChromosomes().add(x, mutateChromosomeOnlyOneGenWithK(population.getChromosomes().get(x)));
+                //Mutate only one gen without K
+                //mutatePopulation.getChromosomes().add(x, mutateChromosomeOnlyOneGen(population.getChromosomes().get(x)));
+                //Mutate only one gen with K
+                //mutatePopulation.getChromosomes().add(x, mutateChromosomeOnlyOneGenWithK(population.getChromosomes().get(x)));
             }else {
                 mutatePopulation.getChromosomes().add(x, population.getChromosomes().get(x));
             }
@@ -65,7 +70,6 @@ public class GeneticAlgorithm_Example {
 
     private Chromosome_Clustering crossoverChromosome(Chromosome_Clustering chromosome1, Chromosome_Clustering chromosome2){
         Chromosome_Clustering crossoverChromosome = new Chromosome_Clustering(chromosome1.getGenes().length-1, K_MAX);
-//        crossoverChromosome.setNV(NUMBER_VARIABLES);
 
         for (int i=0; i < chromosome1.getGenes().length; i++){
             if (Math.random() < CROSSOVER_RATE){
@@ -176,19 +180,9 @@ public class GeneticAlgorithm_Example {
 
         for(int x=0; x < POPULATION_SIZE; x++){
             int k = ThreadLocalRandom.current().nextInt(2,K_MAX);
-//            int k = 7;
             Chromosome_Clustering newChromosome = new Chromosome_Clustering(DIMENSION,k).inicializeChromosome().validateInitialChromosome();
             popList.add(newChromosome);
         }
-
-//        List<Chromosome_Clustering> auxList = Chromosome_Clustering.mainTestChromosomes(DIMENSION);
-//        popList.add(auxList.get(0));
-//        popList.add(auxList.get(1));
-//        popList.add(auxList.get(2));
-//        popList.add(auxList.get(3));
-//        popList.add(auxList.get(4));
-//        popList.add(auxList.get(5));
-//        popList.add(auxList.get(6));
 
         return new Population_Clustering(popList);
     }
@@ -218,4 +212,7 @@ public class GeneticAlgorithm_Example {
         DIMENSION = dimension;
     }
 
+    public void setDATABASE(Dataset<Row> DATABASE) {
+        GeneticAlgorithm_Example.DATABASE = DATABASE;
+    }
 }

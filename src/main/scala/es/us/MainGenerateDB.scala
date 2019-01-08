@@ -256,10 +256,10 @@ object MainGenerateDB {
 //      .replace("WrappedArray(", "").replace(")", "").replace(" ", ""))
 //      .coalesce(1, shuffle = true)
 //      .saveAsTextFile(s"V$features-T$tags" + Utils.whatTimeIsIt())
-    val prueba = Random.shuffle(aux0.toSeq)
+    val shuffleArray = Random.shuffle(aux0.toSeq)
 
-//    val index = ThreadLocalRandom.current.nextInt(0, prueba.length - 1)
-//    val elementoRandom = prueba.apply(index)
+//    val index = ThreadLocalRandom.current.nextInt(0, shuffleArray.length - 1)
+//    val elementoRandom = shuffleArray.apply(index)
 
     val resultTotal = Array.ofDim[Int](30,features)
 
@@ -271,7 +271,7 @@ object MainGenerateDB {
     var result = Array.ofDim[Int](number_cluster,features)
     var indexResult = 1
 
-    for (arrayAux <- prueba){
+    for (arrayAux <- shuffleArray){
 
       val arrayAuxCombinations = pairCombinationArrayInt(arrayAux)
 

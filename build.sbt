@@ -4,7 +4,7 @@ version := "0.1"
 
 scalaVersion := "2.11.8"
 
-val sparkVersion = "2.2.0"
+val sparkVersion = "2.2.1"
 
 //CLUSTER
 //scalaVersion := "2.11.6"

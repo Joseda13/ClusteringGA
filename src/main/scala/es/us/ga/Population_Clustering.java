@@ -25,9 +25,11 @@ public class Population_Clustering {
 
         Comparator<Chromosome_Clustering> byFitness =
                 (Chromosome_Clustering c1, Chromosome_Clustering c2)-> {
+//                    System.out.println("Chromo 1: " + c1.toString());
+//                    System.out.println("Chromo 2: " + c2.toString());
                     if (c1.getFitness() < c2.getFitness()) return 1;
                     if (c1.getFitness() > c2.getFitness()) return -1;
-//                    if (c1.getFitness() == c2.getFitness()) return -1;
+                    if (c1.getFitness() == c2.getFitness()) return 1;
                     return 0;
                 };
 
