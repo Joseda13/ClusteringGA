@@ -1,11 +1,6 @@
 package es.us.ga;
 
-import es.us.spark.mllib.clustering.validation.FeatureStatistics;
 import es.us.spark.mllib.clustering.validation.Indices;
-import org.apache.commons.math3.genetics.AbstractListChromosome;
-import org.apache.commons.math3.genetics.BinaryChromosome;
-import org.apache.commons.math3.genetics.Chromosome;
-import org.apache.commons.math3.genetics.RandomKey;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -375,21 +370,21 @@ public class Chromosome_Clustering {
 
     public double recalculatedFitness(){
         //Fitness = Dunn
-//        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Example.DATABASE);
+//        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm.DATABASE);
         //Fitness = Dunn + sqrt(nv)
-//        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Example.DATABASE) + Math.sqrt(contAttributesAll());
+//        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm.DATABASE) + Math.sqrt(contAttributesAll());
         //Fitness = Dunn + nv
-        // return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Example.DATABASE) + contAttributesAll();
+        // return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm.DATABASE) + contAttributesAll();
         //Fitness = Dunn + ln(nv)
-//        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm_Example.DATABASE) + Math.log(contAttributesAll());
+//        return Indices.getFitnessDunn(getGenes(), GeneticAlgorithm.DATABASE) + Math.log(contAttributesAll());
         //Fitness = Silhoutte
-//        return Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Example.DATABASE);
+//        return Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm.DATABASE);
 //        Fitness = Silhoutte + (1-(1(/nv)))
-//        return (Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Example.DATABASE) + (1.0 - (1.0 / contAttributesAll()) ));
+//        return (Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm.DATABASE) + (1.0 - (1.0 / contAttributesAll()) ));
         //Fitness = Silhoutte + 0.1*(1-(1(/nv)))
-//        return (Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Example.DATABASE) + (0.1*(1.0 - (1.0 / contAttributesAll()))) );
+//        return (Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm.DATABASE) + (0.1*(1.0 - (1.0 / contAttributesAll()))) );
         //Fitness = Silhoutte + 0.75*(1-(1(/nv)))
-        return (Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm_Example.DATABASE) + (0.75*(1.0 - (1.0 / contAttributesAll()))) );
+        return (Indices.getFitnessSilhouette(getGenes(), GeneticAlgorithm.DATABASE) + (0.75*(1.0 - (1.0 / contAttributesAll()))) );
     }
 
     public String toString(){

@@ -1,6 +1,6 @@
 package es.us
 
-import es.us.ga.{GeneticAlgorithm_Example, Population_Clustering}
+import es.us.ga.{GeneticAlgorithm, Population_Clustering}
 import es.us.ga.MainTestGA.logInfo
 import es.us.spark.mllib.Utils
 import org.apache.log4j.{Level, Logger}
@@ -39,7 +39,7 @@ object MainTestDummies extends Logging{
       origen = data.apply(0)
       dimension = data.apply(1).toInt
 
-      val geneticAlgorithm = new GeneticAlgorithm_Example
+      val geneticAlgorithm = new GeneticAlgorithm
       geneticAlgorithm.setDimension(dimension)
       geneticAlgorithm.setPATHTODATA(origen)
 
@@ -47,14 +47,14 @@ object MainTestDummies extends Logging{
       println("*********GA CLUSTERING*********")
       println("*******************************")
       println("Configuration:")
-      println("\tPOPULATION SIZE: " + GeneticAlgorithm_Example.POPULATION_SIZE)
-      println("\tNUMBER GENERATIONS: " + GeneticAlgorithm_Example.NUM_GENERATIONS)
-      println("\tDIMENSION CHROMOSOMES: " + GeneticAlgorithm_Example.DIMENSION)
+      println("\tPOPULATION SIZE: " + GeneticAlgorithm.POPULATION_SIZE)
+      println("\tNUMBER GENERATIONS: " + GeneticAlgorithm.NUM_GENERATIONS)
+      println("\tDIMENSION CHROMOSOMES: " + GeneticAlgorithm.DIMENSION)
       println("Running...\n")
 
       var generationNumber = 0
 
-      while (generationNumber < GeneticAlgorithm_Example.NUM_GENERATIONS) {
+      while (generationNumber < GeneticAlgorithm.NUM_GENERATIONS) {
         generationNumber += 1
 
         val startIter = System.nanoTime

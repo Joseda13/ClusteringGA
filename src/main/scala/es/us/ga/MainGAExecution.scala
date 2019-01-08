@@ -39,11 +39,11 @@ object MainGAExecution extends Logging{
       .cache()
 
     //Initialization the GA
-    val geneticAlgorithm = new GeneticAlgorithm_Example
+    val geneticAlgorithm = new GeneticAlgorithm
     geneticAlgorithm.setDATABASE(dataRead)
     geneticAlgorithm.setDimension(dimension)
 
-    val resultGenetic = new Array[String](GeneticAlgorithm_Example.NUM_GENERATIONS + 1)
+    val resultGenetic = new Array[String](GeneticAlgorithm.NUM_GENERATIONS + 1)
 
     for (in <- 0 to resultGenetic.length - 1) {
       resultGenetic.update(in, "")
@@ -53,15 +53,15 @@ object MainGAExecution extends Logging{
     println("*********GA CLUSTERING*********")
     println("*******************************")
     println("Configuration:")
-    println("\tPOPULATION SIZE: " + GeneticAlgorithm_Example.POPULATION_SIZE)
-    println("\tNUMBER GENERATIONS: " + GeneticAlgorithm_Example.NUM_GENERATIONS)
-    println("\tDIMENSION CHROMOSOMES: " + GeneticAlgorithm_Example.DIMENSION)
-    println("\tMUTATION RATE: " + GeneticAlgorithm_Example.MUTATION_RATE)
-    println("\tMUTATION WEIGHTS: " + GeneticAlgorithm_Example.MUTATION_WEIGHTS)
-    println("\tMUTATION K: " + GeneticAlgorithm_Example.MUTATION_K)
-    println("\tCROSSOVER RATE: " + GeneticAlgorithm_Example.CROSSOVER_RATE)
-    println("\tNUMBER ELITE CHROMOSOMES: " + GeneticAlgorithm_Example.NUM_ELIT_CHROMOSOMES)
-    println("\tTOURNAMENT SIZE: " + GeneticAlgorithm_Example.TOURNAMENT_SIZE)
+    println("\tPOPULATION SIZE: " + GeneticAlgorithm.POPULATION_SIZE)
+    println("\tNUMBER GENERATIONS: " + GeneticAlgorithm.NUM_GENERATIONS)
+    println("\tDIMENSION CHROMOSOMES: " + GeneticAlgorithm.DIMENSION)
+    println("\tMUTATION RATE: " + GeneticAlgorithm.MUTATION_RATE)
+    println("\tMUTATION WEIGHTS: " + GeneticAlgorithm.MUTATION_WEIGHTS)
+    println("\tMUTATION K: " + GeneticAlgorithm.MUTATION_K)
+    println("\tCROSSOVER RATE: " + GeneticAlgorithm.CROSSOVER_RATE)
+    println("\tNUMBER ELITE CHROMOSOMES: " + GeneticAlgorithm.NUM_ELIT_CHROMOSOMES)
+    println("\tTOURNAMENT SIZE: " + GeneticAlgorithm.TOURNAMENT_SIZE)
     println("Running...\n")
 
     //Create the initial population and ordered by fitness
@@ -90,7 +90,7 @@ object MainGAExecution extends Logging{
     var enabledSubstitution = true
 
     //GA evolution process
-    while ((generationNumber < GeneticAlgorithm_Example.NUM_GENERATIONS) && conditionStop) {
+    while ((generationNumber < GeneticAlgorithm.NUM_GENERATIONS) && conditionStop) {
       generationNumber += 1
 
       val startIter = System.nanoTime
@@ -123,7 +123,7 @@ object MainGAExecution extends Logging{
         if (!enabledSubstitution) {
           conditionStop = false
         } else {
-          population = geneticAlgorithm.substitutionPoblation(new Population_Clustering(population.getChromosomes.subList(0, (GeneticAlgorithm_Example.POPULATION_SIZE / 2))))
+          population = geneticAlgorithm.substitutionPoblation(new Population_Clustering(population.getChromosomes.subList(0, (GeneticAlgorithm.POPULATION_SIZE / 2))))
         }
 
         enabledSubstitution = false

@@ -2,7 +2,7 @@ package es.us
 
 import java.util
 
-import es.us.ga.{Chromosome_Clustering, GeneticAlgorithm_Example}
+import es.us.ga.{Chromosome_Clustering, GeneticAlgorithm}
 import es.us.spark.mllib.clustering.validation.{FeatureStatistics, Indices}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -43,7 +43,7 @@ object MainTestAll_Indices {
 //
 //    auxD.write.csv("B:\\K7-10D-5V-5DU")
 
-    val geneticAlgorithm = new GeneticAlgorithm_Example
+    val geneticAlgorithm = new GeneticAlgorithm
 
     var population = geneticAlgorithm.randomPopulation()
     population.sortChromosomesByFitness()
@@ -51,10 +51,10 @@ object MainTestAll_Indices {
 
     for (i <- 0 until population.getChromosomes.size()){
     //      var indicesChi = FeatureStatistics.getChiIndices(population.getChromosomes.get(i).getGenes, dataFile)
-          var indicesOld = Indices.getInternalIndices(population.getChromosomes.get(i).getGenes, GeneticAlgorithm_Example.PATHTODATA)
-//          var fitnessDunn = Indices.getFitnessDunn(population.getChromosomes.get(i).getGenes, GeneticAlgorithm_Example.PATHTODATA)
+          var indicesOld = Indices.getInternalIndices(population.getChromosomes.get(i).getGenes, GeneticAlgorithm.PATHTODATA)
+//          var fitnessDunn = Indices.getFitnessDunn(population.getChromosomes.get(i).getGenes, GeneticAlgorithm.PATHTODATA)
       var fitnessDunn = population.getChromosomes.get(i).getFitness
-      var fitnessSilhoutte = Indices.getFitnessSilhouette(population.getChromosomes.get(i).getGenes, GeneticAlgorithm_Example.PATHTODATA)
+      var fitnessSilhoutte = Indices.getFitnessSilhouette(population.getChromosomes.get(i).getGenes, GeneticAlgorithm.PATHTODATA)
     //      var indicesInternal = Indices.getInternalIndicesNewVersion(population.getChromosomes.get(i).getGenes, dataFile)
 
           println(

@@ -3,12 +3,11 @@ package es.us.ga;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 
-import javax.xml.crypto.Data;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class GeneticAlgorithm_Example {
+public class GeneticAlgorithm {
 
     //Configuration for the GA
     public static final int POPULATION_SIZE = 200;
@@ -213,6 +212,6 @@ public class GeneticAlgorithm_Example {
     }
 
     public void setDATABASE(Dataset<Row> DATABASE) {
-        GeneticAlgorithm_Example.DATABASE = DATABASE;
+        GeneticAlgorithm.DATABASE = DATABASE;
     }
 }
