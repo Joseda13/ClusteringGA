@@ -12,7 +12,7 @@ As for the classes with the most important code, we can find the following:
 * Utils: Scala object that includes some helpful methods.
 ## Execution
 If you only want to perform a test with the default configuration of our algorithm, the user must modify only the "MainGAExecution" class for it, more specifically the following parameters:
-* origen: Set the path where the dataset is located.
+* origin: Set the path where the dataset is located.
 * destination: Set the path to the saved destination for the result of the GA execution.
 * dimension: Set the total columns of the used dataset.
 * delimiter: Set the delimiter for each column into the dataset.
