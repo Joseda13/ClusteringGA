@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class GeneticAlgorithm {
 
-    //Configuration for the GA
+    //Configuration parameters for the GA
     public static final int POPULATION_SIZE = 200;
     public static final int NUM_GENERATIONS = 100;
     public static final double MUTATION_RATE = 0.1;

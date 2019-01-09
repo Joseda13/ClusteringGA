@@ -8,9 +8,11 @@ import org.apache.spark.sql.SparkSession
 object MainGAExecution extends Logging{
 
   def main(args: Array[String]): Unit = {
+
     Logger.getLogger("org").setLevel(Level.OFF)
     Logger.getLogger("akka").setLevel(Level.OFF)
 
+    //Initialize Spark Session
     val spark = SparkSession.builder()
       .appName("Genetic Algorithm")
       .master("local[*]")
@@ -18,13 +20,14 @@ object MainGAExecution extends Logging{
 
     val startTime = System.nanoTime
 
-    var origen = "data/K3-N3-D3-DES0_03"
+    //Configuration parameters
+    var origin = "data/K3-N3-D3-DES0_03"
     var destination = "Results/Silhoutte_75COR/K3-N3-D3-DES0_03"
     var dimension = 6
     var delimiter = ","
 
     if (args.length > 2){
-      origen = args.apply(0)
+      origin = args.apply(0)
       destination = args.apply(1)
       dimension = args.apply(2).toInt
       delimiter = args.apply(3)
@@ -35,16 +38,16 @@ object MainGAExecution extends Logging{
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", delimiter)
-      .csv(origen)
+      .csv(origin)
       .cache()
 
-    //Initialization the GA
+    //Initialize the GA
     val geneticAlgorithm = new GeneticAlgorithm
     geneticAlgorithm.setDATABASE(dataRead)
     geneticAlgorithm.setDimension(dimension)
 
+    //Create a result variable
     val resultGenetic = new Array[String](GeneticAlgorithm.NUM_GENERATIONS + 1)
-
     for (in <- 0 to resultGenetic.length - 1) {
       resultGenetic.update(in, "")
     }
@@ -52,7 +55,7 @@ object MainGAExecution extends Logging{
     println("*******************************")
     println("*********GA CLUSTERING*********")
     println("*******************************")
-    println("Configuration:")
+    println("Configuration parameters:")
     println("\tPOPULATION SIZE: " + GeneticAlgorithm.POPULATION_SIZE)
     println("\tNUMBER GENERATIONS: " + GeneticAlgorithm.NUM_GENERATIONS)
     println("\tDIMENSION CHROMOSOMES: " + GeneticAlgorithm.DIMENSION)
@@ -84,7 +87,7 @@ object MainGAExecution extends Logging{
     var fitnessNextGeneration = 0d
 
     var generationNotChangeFitness = 0
-    var numberGenerationsWithoutChange = 10
+    val numberGenerationsWithoutChange = 10
 
     var conditionStop = true
     var enabledSubstitution = true
@@ -99,11 +102,13 @@ object MainGAExecution extends Logging{
       population = geneticAlgorithm.evolve(population)
       population.sortChromosomesByFitness()
 
-      var resultGeneration = "Generation # " + generationNumber + " => Fittest chromosome: " + population.getChromosomes.get(0).toString
+      val resultGeneration = "Generation # " + generationNumber + " => Fittest chromosome: " + population.getChromosomes.get(0).toString
       println(resultGeneration)
 
+      //Update the result variable with the winner of the actual iteration
       resultGenetic.update(generationNumber, resultGeneration)
 
+      //Check restrictions and update control variables
       if (generationNumber == 0) {
         fitnessGeneration = population.getChromosomes.get(0).getFitness
         fitnessNextGeneration = population.getChromosomes.get(0).getFitness
@@ -137,10 +142,14 @@ object MainGAExecution extends Logging{
 
     val resultRDD = spark.sparkContext.parallelize(resultGenetic)
 
+    println("Saving the result...\n")
+
     //Save the result
     resultRDD.coalesce(1)
       .map(_.toString().replace("(", "").replace(")", "").replace(" ", ""))
       .saveAsTextFile(destination +"-Results-" + Utils.whatTimeIsIt())
+
+    println("Result saved!")
 
     val elapsed = (System.nanoTime - startTime) / 1e9d
     logInfo("TOTAL TIME: " + elapsed)

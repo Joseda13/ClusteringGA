@@ -1,27 +1,25 @@
 package es.us.spark.mllib.clustering.validation
 
-import java.util.concurrent.ThreadLocalRandom
-
-import breeze.linalg.min
-import es.us.ga.Chromosome_Clustering
-import es.us.spark.mllib.Utils
-import org.apache.spark
-import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
+import org.apache.spark.mllib.clustering.KMeans
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object Indices {
 
-  def getFitnessDB(features: Array[Int], pathToData: String) : Double = {
+  /**
+    * Calculate the Davies-Bouldin indice value.
+    *
+    * @param features Chromosome with the features and K for the calculation of the fitness value.
+    * @param pathToFile String with the path to the DataSet.
+    * @example getInternalIndices(features, pathToData)
+    */
+  def getFitnessDB(features: Array[Int], pathToFile: String) : Double = {
 
     val K = features(features.length-1)
     val spark = SparkSession.builder()
       .appName(s"VariablesIndices-$K")
       .master("local[*]")
       .getOrCreate()
-
-    import spark.implicits._
 
     val sc = spark.sparkContext
 
@@ -34,7 +32,7 @@ object Indices {
       .option("header", "false")
       .option("inferSchema", "true")
       .option("delimiter", delimiter)
-      .csv(pathToData)
+      .csv(pathToFile)
       .cache()
 
     var dataFeatures = dataRead.drop(s"_c$classIndex")
@@ -114,6 +112,7 @@ object Indices {
     spark.stop()
 
     bouldin
+
   }
 
   /**
@@ -121,60 +120,17 @@ object Indices {
     *
     * @param features Chromosome with the features and K for the calculation of the Big Data indices.
     * @param pathToData String with the path to the DataSet.
-    * @return Return Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices.
     * @example getInternalIndices(features, pathToData)
     */
-  //(Double, Double, Double, Double)
   def getInternalIndices(features: Array[Int], pathToData: String) : (Double, Double, Double, Double) = {
     val i = 1
     var s = ""
-//    val K = features(features.length-1)
-//
-//    val spark = SparkSession.builder()
-//      .appName(s"Featuring Clusters $K")
-//      .master("local[*]")
-//      .getOrCreate()
-
-//
-//    //Set up the global variables
-//    val idIndex = -1
-//    val classIndex = 10
-//    val delimiter = ","
-//
-//    //Load data
-//    val dataRead = spark.read
-//      .option("header", "false")
-//      .option("inferSchema", "true")
-//      .option("delimiter", delimiter)
-//      .csv(pathToData)
-////      .repartition(1)
-//      .cache()
-//
-//    //Delete ID column and class column
-//    var data = if (idIndex != -1) {
-//      dataRead.drop(s"_c$idIndex")
-//        .drop(s"_c$classIndex")
-//    } else {
-//      dataRead.drop(s"_c$classIndex")
-//    }
-//
-//    //If the gen to the chromosome if == 0, then delete its column to the DataSet
-//    for (i <- 0 to features.length - 2){
-//      if (features(i) == 0){
-//        data = data.drop(s"_c$i")
-//      }
-//    }
-//
-//    //Create a RDD with the points convert into Vectors
-//    val parsedData = data.map(_.toSeq.asInstanceOf[Seq[Double]]).rdd.map(s => Vectors.dense(s.toArray)).cache()
 
     val K = features(features.length-1)
     val spark = SparkSession.builder()
       .appName(s"VariablesIndices-$K")
       .master("local[*]")
       .getOrCreate()
-
-    import spark.implicits._
 
     val sc = spark.sparkContext
 
@@ -189,14 +145,6 @@ object Indices {
       .option("delimiter", delimiter)
       .csv(pathToData)
       .cache()
-
-    //Delete the ID column and the class column
-    //    var data = if (idIndex != -1) {
-    //      dataRead.drop(s"_c$idIndex")
-    //        .withColumnRenamed(dataRead.columns(classIndex), "class")
-    //    } else {
-    //      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
-    //    }
 
     var dataFeatures = dataRead.drop(s"_c$classIndex")
 
@@ -248,24 +196,22 @@ object Indices {
     val interMeanAux = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).reduce(_ + _)
     val interMean = interMeanAux / centroidsCartesian.count()
 
-    //val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
-
     //Get Silhoutte index: (intercluster - intracluster)/Max(intercluster,intracluster)
-//    val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
-//    s += i + ";" + silhoutte + ";"
-//
-//    //DUNN
-//
-//    //Min distance between centroids
-//    val minA = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).min()
-//
-//    //Max distance from points to its centroid
-//    val maxB = parsedData.map { x =>
-//      Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
-//    }.max
-//
-//    //Get Dunn index: Mín(Dist centroides al centroide)/Max(dist punto al centroide)
-//    val dunn = minA / maxB
+    val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
+    s += i + ";" + silhoutte + ";"
+
+    //DUNN
+
+    //Min distance between centroids
+    val minA = centroidsCartesian.map(x => Vectors.sqdist(x._1, x._2)).min()
+
+    //Max distance from points to its centroid
+    val maxB = parsedData.map { x =>
+      Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
+    }.max
+
+   //Get Dunn index: Mín(Dist centroides al centroide)/Max(dist punto al centroide)
+    val dunn = minA / maxB
 
     //DAVIES-BOULDIN
     val avgCentroid = parsedData.map { x =>
@@ -291,12 +237,13 @@ object Indices {
 
     val bouldin = davis / features(features.length-1)
 
-//    //WSSSE
-//    val wssse = clusters.computeCost(parsedData)
+    //WSSSE
+    val wssse = clusters.computeCost(parsedData)
 
     spark.stop()
 
-    (0d, 0d, bouldin, 0d)
+    (silhoutte, dunn, bouldin, wssse)
+
   }
 
   /**
@@ -304,10 +251,10 @@ object Indices {
     *
     * @param features Chromosome with the features and K for the calculation of the Big Data indices.
     * @param pathToData String with the path to the DataSet.
-    * @return Return Silhoutte, Dunn, Davies-Bouldin and WSSE Big Data indices new version.
     * @example getInternalIndicesNewVersion(features, pathToData)
     */
   def getInternalIndicesNewVersion(features: Array[Int], pathToData: String) :(Double, Double, Double, Double) = {
+
     val i = 1
     var s = ""
     val K = features(features.length-1)
@@ -354,7 +301,6 @@ object Indices {
     val parsedData = data.map(_.toSeq.asInstanceOf[Seq[Double]]).rdd.map(s => Vectors.dense(s.toArray)).cache()
 
     //Create the clusters using the K-Means algorithm to Spark
-//    val clusters = new BisectingKMeans()
     val clusters = new KMeans()
       .setK(features(features.length-1))
       .setMaxIterations(100)
@@ -417,16 +363,17 @@ object Indices {
     spark.stop()
 
     (silhoutte, dunn, bouldin, wssse)
+
   }
 
   /**
     * Calculate Silhouette index.
     *
     * @param data Array with the Vector for each cluster.
-    * @return Return B average, A average and Silhouette value.
     * @example getSilhouette(data)
     */
   def getSilhouette(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+
     //Set up the global variables
     var b = 0.0
     var a = 0.0
@@ -502,16 +449,17 @@ object Indices {
     silhouette = silhouette / data.map(_._2.size).sum
 
     (b, a, silhouette)
+
   }
 
   /**
     * Calculate Dunn index with minimum inter-cluster and maximum intra-cluster average distances.
     *
     * @param data Array with the Vector for each cluster.
-    * @return Return minimum inter-cluster average distance, maximum intra-cluster average distance and Dunn value.
     * @example getDunn(data)
     */
   def getDunn(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+
     //Set up the global variables
     var intra = 0.0
     var inter = 0.0
@@ -591,16 +539,17 @@ object Indices {
     dunn = inter / intra
 
     (inter, intra, dunn)
+
   }
 
   /**
     * Calculate Dunn index with average inter-cluster distance and average intra-cluster distances.
     *
     * @param data Array with the Vector for each cluster.
-    * @return Return inter-cluster average distance, intra-cluster average distance and Dunn value.
     * @example getDunnWithAverage(data)
     */
   def getDunnWithAverage(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+
     //Set up the global variables
     var intra = 0.0
     var inter = 0.0
@@ -670,16 +619,17 @@ object Indices {
     dunn = inter / intra
 
     (inter, intra, dunn)
+
   }
 
   /**
     * Calculate Dunn index with minimum inter-cluster distance and maximum intra-cluster distance.
     *
     * @param data Array with the Vector for each cluster.
-    * @return Return minimum inter-cluster distance, maximum intra-cluster distance and Dunn value.
     * @example getDunnMinimumMaximum(data)
     */
   def getDunnMinimumMaximum(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+
     //Set up the global variables
     var intra = 0.0
     var inter = 0.0
@@ -740,16 +690,17 @@ object Indices {
     dunn = inter / intra
 
     (inter, intra, dunn)
+
   }
 
   /**
     * Calculate Dunn index with minimum inter-cluster centroid distance and maximum intra-cluster centroid average distance.
     *
     * @param data Array with the Vector for each cluster.
-    * @return Return minimum inter-cluster centroid distance, maximum intra-cluster centroid average distance and Dunn value.
     * @example getDunnCentroids(data)
     */
   def getDunnCentroids(data: Array[(Int, scala.Iterable[Vector])]): (Double, Double, Double) = {
+
     //Set up the global variables
     var intra = 0.0
     var inter = 0.0
@@ -816,8 +767,16 @@ object Indices {
     dunn = inter / intra
 
     (inter, intra, dunn)
+
   }
 
+  /**
+    * Calculate Dunn index with minimum inter-cluster and maximum intra-cluster average distances.
+    *
+    * @param features Chromosome with the features and K for the calculation of the fitness value.
+    * @param pathToFile String with the path to the DataSet.
+    * @example getFitnessDunn(features, pathToData)
+    */
   def getFitnessDunn(features: Array[Int], pathToFile: String): Double = {
 
     val K = features(features.length-1)
@@ -837,14 +796,6 @@ object Indices {
       .option("delimiter", delimiter)
       .csv(pathToFile)
       .cache()
-
-    //Delete the ID column and the class column
-//    var data = if (idIndex != -1) {
-//      dataRead.drop(s"_c$idIndex")
-//        .withColumnRenamed(dataRead.columns(classIndex), "class")
-//    } else {
-//      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
-//    }
 
     var dataFeatures = dataRead.drop(s"_c$classIndex")
 
@@ -881,14 +832,9 @@ object Indices {
       (auxVector)
     }
 
-//    val clusters = KMeans.train(parsedData, K, 100, 1, "k-means||", 1L)
-//    val clusters = KMeans.train(parsedData, K, 100)
     val clusters = new KMeans().setK(K).setMaxIterations(100).setSeed(K).run(parsedData)
-//  val clusters = new BisectingKMeans().setK(K).setMaxIterations(100).setSeed(Utils.whatTimeIsIt().toLong).run(parsedData)
 
     val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
-//    println("El tamaño de cada cluster es: ")
-//    data.foreach(x => println(x._2.size))
 
     //Set up the global variables
     var intra = 0.0
@@ -969,8 +915,16 @@ object Indices {
     dunn = (inter / intra)
 
     (dunn)
+
   }
 
+  /**
+    * Calculate Dunn index with minimum inter-cluster and maximum intra-cluster average distances.
+    *
+    * @param features Chromosome with the features and K for the calculation of the fitness value.
+    * @param dataRead Dataset with all instances to realice the clustering.
+    * @example getFitnessDunn(features, dataRead)
+    */
   def getFitnessDunn(features: Array[Int], dataRead: DataFrame): Double = {
 
     val K = features(features.length-1)
@@ -1093,8 +1047,16 @@ object Indices {
     dunn = (inter / intra)
 
     (dunn)
+
   }
 
+  /**
+    * Calculate Silhoutte index value.
+    *
+    * @param features Chromosome with the features and K for the calculation of the fitness value.
+    * @param pathToFile String with the path to the DataSet.
+    * @example getFitnessSilhouette(features, pathToData)
+    */
   def getFitnessSilhouette(features: Array[Int], pathToFile: String): Double = {
 
     val K = features(features.length-1)
@@ -1115,33 +1077,15 @@ object Indices {
       .csv(pathToFile)
       .cache()
 
-//    dataRead.printSchema()
-
-    //Delete the ID column and the class column
-    //    var data = if (idIndex != -1) {
-    //      dataRead.drop(s"_c$idIndex")
-    //        .withColumnRenamed(dataRead.columns(classIndex), "class")
-    //    } else {
-    //      dataRead.withColumnRenamed(dataRead.columns(classIndex), "class")
-    //    }
-
-//    var dataFeatures = dataRead.drop(s"_c$classIndex")
     var dataFeatures = dataRead
-//    println("El chromo: ")
-//    features.foreach(println(_))
-//    println("Show del DataFeatures: ")
-//    dataFeatures.show(10)
 
     //If the gen to the chromosome if == 0, then delete its column to the DataSet
     for (i <- 0 to features.length - 2){
       if (features(i) == 0){
-//        val index = i + 1
-        val index = i
+        val index = i + 1
         dataFeatures = dataFeatures.drop(s"_c$index")
       }
     }
-//    println("Show DataFeatures despues de borrar columnas: ")
-//    dataFeatures.show(10)
 
     //Save all columns less the class column
     val columnsDataSet = dataFeatures.columns
@@ -1150,45 +1094,27 @@ object Indices {
 
       //Create a Array[Double] with the values of each column to the DataSet read
       val vectorValues = for (co <- columnsDataSet) yield{
-//        println("la columna tiene que ser: " + co)
         //If the column number have two digits
         if(co.length == 4) {
-//          r.getInt(co.takeRight(2).toInt).toDouble
-          r.getString(co.takeRight(2).toInt).toDouble
+          r.getInt(co.takeRight(2).toInt).toDouble
+//          r.getString(co.takeRight(2).toInt).toDouble
         }
         //If the column number have one digit
         else {
-//          println("el numero cogido es: " + r.getInt(co.takeRight(1).toInt).toDouble)
-//          r.getInt(co.takeRight(1).toInt).toDouble
-          r.getString(co.takeRight(1).toInt).toDouble
+          r.getInt(co.takeRight(1).toInt).toDouble
+//          r.getString(co.takeRight(1).toInt).toDouble
         }
       }
 
       //Create a Vector with the Array[Vector] of each row in the DataSet read
       val auxVector = Vectors.dense(vectorValues)
-//      println("el vector es: " + auxVector)
       //Return the Cluster ID and the Vector for each row in the DataSet read
       (auxVector)
     }
 
-//    val clusters = KMeans.train(parsedData, K, 100)
     val clusters = new KMeans().setK(K).setMaxIterations(100).setSeed(K).run(parsedData)
-//    clusters.clusterCenters.foreach(println(_))
-//    val rddToKnime = parsedData.map(v => (clusters.predict(v), v))
-//    rddToKnime.map(x => x._1 + "," + x._2.toString.replace("[", "").replace("]", "").replace(" ",""))
-//      .coalesce(1, shuffle = true)
-//      .saveAsTextFile(s"testSilhoutte-${Utils.whatTimeIsIt()}")
 
     val data = parsedData.map(v => (clusters.predict(v), v)).groupByKey().collect()
-//    val data = parsedData.map{
-//      v =>
-//        val cluster = ThreadLocalRandom.current().nextInt(0, 3)
-//          (cluster, v)
-//    }.groupByKey().collect()
-
-
-//    val weightsForDistances = Array.fill(35){0}
-//    weightsForDistances.update(32, 1)
 
     //Set up the global variables
     var b = 0.0
@@ -1224,7 +1150,6 @@ object Indices {
           for (j <- points_M.filter(_._1 == m).flatMap(_._2)){
             //Add the distance between the i point and j point
             b_i_j += Vectors.sqdist(i,j)
-//            b_i_j += calculateDist(i,j,weightsForDistances)
           }
 
           //Calculate the average distance between the i point and the cluster M
@@ -1245,7 +1170,6 @@ object Indices {
         for (p <- points_K.flatMap(_._2) if p != i){
           //Add the distance between the i point and the p point
           a_i_p += Vectors.sqdist(i,p)
-//          a_i_p += calculateDist(i, p, weightsForDistances)
         }
 
         //Calculate the average distance between the i point and the rest of point in the cluster K
@@ -1266,11 +1190,17 @@ object Indices {
       silhouette = 0.01
     }
 
-//    println("Silhoutte calculado: " + silhouette)
-
     (silhouette)
+
   }
 
+  /**
+    * Calculate Silhoutte index value.
+    *
+    * @param features Chromosome with the features and K for the calculation of the fitness value.
+    * @param dataRead Dataset with all instances to realice the clustering.
+    * @example getFitnessSilhouette(features, dataRead)
+    */
   def getFitnessSilhouette(features: Array[Int], dataRead: DataFrame): Double = {
 
     val K = features(features.length-1)
@@ -1346,7 +1276,6 @@ object Indices {
           for (j <- points_M.filter(_._1 == m).flatMap(_._2)){
             //Add the distance between the i point and j point
             b_i_j += Vectors.sqdist(i,j)
-            //            b_i_j += calculateDist(i,j,weightsForDistances)
           }
 
           //Calculate the average distance between the i point and the cluster M
@@ -1367,7 +1296,6 @@ object Indices {
         for (p <- points_K.flatMap(_._2) if p != i){
           //Add the distance between the i point and the p point
           a_i_p += Vectors.sqdist(i,p)
-          //          a_i_p += calculateDist(i, p, weightsForDistances)
         }
 
         //Calculate the average distance between the i point and the rest of point in the cluster K
@@ -1389,9 +1317,18 @@ object Indices {
     }
 
     (silhouette)
+
   }
 
-  def calculateDist (v1: Vector, v2: Vector, weights: Array[Int]): Double = {
+  /**
+  * Calculate the distance between two vectors depending on the given weights.
+  *
+  * @param v1 First vector.
+  * @param v2 Second vector.
+  * @param weights Array with the weights for each vector component.
+  * @example calculateDist(vectors)
+  */
+  def calculateDist(v1: Vector, v2: Vector, weights: Array[Int]): Double = {
     var result = 0d
 
     for (index <- 0 until weights.length){
@@ -1405,7 +1342,6 @@ object Indices {
     * Calculate Centroid to Iterable[Vector].
     *
     * @param vectors Array with the Vector values.
-    * @return Return the centroid of the Iterable[Vector].
     * @example calculateMean(vectors)
     */
   def calculateMean(vectors: Iterable[Vector]): Vector = {
