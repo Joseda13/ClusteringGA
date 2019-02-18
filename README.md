@@ -1,7 +1,7 @@
 # ClusteringGA
 This package contains the code for the execution of a genetic algorithm in Scala whose objective is to find the optimal number of clusters within a dataset, as well as the most relevant attributes to achieve it. The algorithm executes the K-Means method designed in Spark within its Machine Learning library (MLlib) to perform clustering. While for the calculation of the fitness function within the GA, there are several implementations of the internal validation indices for clustering of both Silhouette and Dunn.
 ## Getting Started
-Within the "data" folder a total of 82 datasets are available to the user for testing with the implemented algorithm. Of which 65 have been generated internally thanks to our generator (https://github.com/Joseda13/ClusteringDBGenerator) and the other 17 have been obtained from the following link: http://cs.joensuu.fi/sipu/datasets/.
+Within the "data" folder a total of 82 datasets are available to the user for testing with the implemented algorithm. Of which 65 have been generated internally thanks to our [generator](https://github.com/Joseda13/ClusteringDBGenerator) and the other 17 have been obtained from the following [link](http://cs.joensuu.fi/sipu/datasets/).
 ### Prerequisites
 The package is ready to be used. You only have to download it and import it into your workspace. The main files include an example main that could be used.
 As for the classes with the most important code, we can find the following:
